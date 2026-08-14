@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import type { ComponentProps } from "react";
 import { useMemo, useState } from "react";
 import {
@@ -163,13 +164,43 @@ const CATEGORIES: Category[] = [
   },
 ];
 
-const MENU_OPTIONS: Array<{ id: string; label: string; icon: IconName }> = [
-  { id: "home", label: "Inicio", icon: "home-outline" },
+const MENU_OPTIONS: Array<{
+  id: string;
+  label: string;
+  icon: IconName;
+  route?:
+    | "/home"
+    | "/favorites"
+    | "/contacts"
+    | "/provider-register"
+    | "/profile";
+}> = [
+  { id: "home", label: "Inicio", icon: "home-outline", route: "/home" },
   { id: "categories", label: "Categorías", icon: "grid-outline" },
-  { id: "favorites", label: "Favoritos", icon: "heart-outline" },
-  { id: "contacts", label: "Mis contactos", icon: "chatbubble-outline" },
-  { id: "provider", label: "Soy proveedor", icon: "briefcase-outline" },
-  { id: "profile", label: "Mi perfil", icon: "person-outline" },
+  {
+    id: "favorites",
+    label: "Favoritos",
+    icon: "heart-outline",
+    route: "/favorites",
+  },
+  {
+    id: "contacts",
+    label: "Mis contactos",
+    icon: "chatbubble-outline",
+    route: "/contacts",
+  },
+  {
+    id: "provider",
+    label: "Soy proveedor",
+    icon: "briefcase-outline",
+    route: "/provider-register",
+  },
+  {
+    id: "profile",
+    label: "Mi perfil",
+    icon: "person-outline",
+    route: "/profile",
+  },
 ];
 
 export default function HomeScreen() {
@@ -208,6 +239,19 @@ export default function HomeScreen() {
     setLocationVisible(false);
   };
 
+  const handleMenuPress = (option: (typeof MENU_OPTIONS)[number]) => {
+    setMenuVisible(false);
+
+    if (option.id === "categories") {
+      setSearch("");
+      return;
+    }
+
+    if (option.route && option.route !== "/home") {
+      router.push(option.route);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <FlatList
@@ -236,6 +280,7 @@ export default function HomeScreen() {
                 <Text style={styles.brandAccent}>Conecta</Text>
               </View>
               <Pressable
+                onPress={() => router.push("/profile")}
                 style={({ pressed }) => [
                   styles.profileButton,
                   pressed && styles.pressed,
@@ -325,6 +370,16 @@ export default function HomeScreen() {
           const count = item.locations[selectedLocationId] ?? 0;
           return (
             <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: "/category/[categoryId]",
+                  params: {
+                    categoryId: item.id,
+                    locationId: selectedLocation.id,
+                    locationName: selectedLocation.name,
+                  },
+                })
+              }
               style={({ pressed }) => [
                 styles.categoryCard,
                 pressed && styles.categoryCardPressed,
@@ -514,10 +569,11 @@ export default function HomeScreen() {
                 {MENU_OPTIONS.map((option, index) => (
                   <Pressable
                     key={option.id}
-                    onPress={() => setMenuVisible(false)}
-                    style={[
+                    onPress={() => handleMenuPress(option)}
+                    style={({ pressed }) => [
                       styles.menuOption,
                       index === 0 && styles.activeMenuOption,
+                      pressed && styles.pressed,
                     ]}
                   >
                     <Ionicons
