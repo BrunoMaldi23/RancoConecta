@@ -1,0 +1,1 @@
+router.replace('/home');
