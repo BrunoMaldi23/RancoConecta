@@ -1,98 +1,178 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import {
+  Pressable,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+export default function LoginScreen() {
+  const handleEnter = () => {
+    router.replace('/home');
+  };
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <View style={styles.logo}>
+            <Ionicons
+              name="location"
+              size={44}
+              color="#FFFFFF"
+            />
+          </View>
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+          <View style={styles.brand}>
+            <Text style={styles.brandPrimary}>Ranco</Text>
+            <Text style={styles.brandAccent}>Conecta</Text>
+          </View>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+          <Text style={styles.description}>
+            Encuentra servicios confiables cerca de ti
+          </Text>
+        </View>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+        <View style={styles.footer}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={handleEnter}
+            style={({ pressed }) => [
+              styles.enterButton,
+              pressed && styles.enterButtonPressed,
+            ]}
+          >
+            <Text style={styles.enterButtonText}>Ingresar</Text>
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+            <Ionicons
+              name="arrow-forward"
+              size={20}
+              color="#FFFFFF"
+            />
+          </Pressable>
+
+          <Text style={styles.location}>
+            Lago Ranco · Futrono · Alrededores
+          </Text>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
   safeArea: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    backgroundColor: '#F7F8F3',
   },
-  heroSection: {
+
+  container: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 500,
+    minHeight: 600,
+    alignSelf: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 28,
+    paddingTop: 80,
+    paddingBottom: 30,
+    backgroundColor: '#F7F8F3',
+  },
+
+  content: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
   },
-  title: {
+
+  logo: {
+    width: 88,
+    height: 88,
+    marginBottom: 27,
+    borderRadius: 27,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#276749',
+    shadowColor: '#17382A',
+    shadowOffset: {
+      width: 0,
+      height: 9,
+    },
+    shadowOpacity: 0.17,
+    shadowRadius: 15,
+    elevation: 7,
+  },
+
+  brand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  brandPrimary: {
+    color: '#17382A',
+    fontSize: 42,
+    lineHeight: 48,
+    fontWeight: '800',
+    letterSpacing: -1.5,
+  },
+
+  brandAccent: {
+    color: '#D17B3F',
+    fontSize: 42,
+    lineHeight: 48,
+    fontWeight: '800',
+    letterSpacing: -1.5,
+  },
+
+  description: {
+    maxWidth: 300,
+    marginTop: 15,
+    color: '#66766D',
+    fontSize: 15,
+    lineHeight: 23,
+    fontWeight: '500',
     textAlign: 'center',
   },
-  code: {
-    textTransform: 'uppercase',
+
+  footer: {
+    width: '100%',
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+
+  enterButton: {
+    minHeight: 58,
+    borderRadius: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 9,
+    backgroundColor: '#276749',
+    shadowColor: '#17382A',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.17,
+    shadowRadius: 14,
+    elevation: 7,
+  },
+
+  enterButtonPressed: {
+    opacity: 0.84,
+    transform: [{ scale: 0.99 }],
+  },
+
+  enterButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  location: {
+    marginTop: 18,
+    color: '#8A968F',
+    fontSize: 12,
+    textAlign: 'center',
   },
 });
