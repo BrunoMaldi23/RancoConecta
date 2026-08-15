@@ -1,0 +1,46 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userRole() {
+      return signedIn()
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        : 'guest';
+    }
+
+    function isAdmin() {
+      return userRole() == 'municipal_admin';
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /providers/{providerId} {
+      allow read: if resource.data.publicationStatus == 'Publicado' || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /requests/{requestId} {
+      allow create: if true;
+      allow read, update: if signedIn() && isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /ratings/{ratingId} {
+      allow create: if true;
+      allow read: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    match /recommendations/{recommendationId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+  }
+}

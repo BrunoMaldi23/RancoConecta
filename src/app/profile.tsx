@@ -17,8 +17,8 @@ export default function Profile() {
     return <Redirect href={{ pathname: '/', params: { returnTo: '/profile' } }} />;
   }
 
-  const closeSession = () => {
-    logout();
+  const closeSession = async () => {
+    await logout();
     router.replace('/home');
   };
 
@@ -60,8 +60,8 @@ export default function Profile() {
           </Pressable>
 
           <Pressable onPress={closeSession} style={styles.secondaryButton}>
-            <Ionicons name="log-out-outline" size={18} color="#224D78" />
-            <Text style={styles.secondaryButtonText}>Cerrar sesion</Text>
+            <Ionicons name="log-out-outline" size={18} color="#A33C35" />
+            <Text style={styles.secondaryButtonText}>Cerrar sesión</Text>
           </Pressable>
         </View>
       </View>
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#EAF1F7',
+    backgroundColor: '#F8E4E0',
   },
-  secondaryButtonText: { color: '#224D78', fontSize: 13, fontWeight: '800' },
+  secondaryButtonText: { color: '#A33C35', fontSize: 13, fontWeight: '800' },
 });

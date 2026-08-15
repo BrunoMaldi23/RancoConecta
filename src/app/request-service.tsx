@@ -5,10 +5,13 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { useAppData } from '../contexts/app-data';
+
 const DATE_OPTIONS = ['Lo antes posible', 'Esta semana', 'Coordinar con el prestador'];
 
 export default function RequestService() {
-  const params = useLocalSearchParams<{ providerName?: string; serviceName?: string }>();
+  const params = useLocalSearchParams<{ providerId?: string; providerName?: string; serviceName?: string }>();
+  const { createRequest } = useAppData();
   const [address, setAddress] = useState('');
   const [detail, setDetail] = useState('');
   const [dateOption, setDateOption] = useState(DATE_OPTIONS[0]);
@@ -43,6 +46,16 @@ export default function RequestService() {
       Alert.alert('Faltan datos', 'Ingresa el sector y describe lo que necesitas.');
       return;
     }
+
+    createRequest({
+      providerId: String(params.providerId || ''),
+      providerName: String(params.providerName || 'Prestador'),
+      serviceName: String(params.serviceName || 'Servicio local'),
+      address: address.trim(),
+      detail: detail.trim(),
+      dateOption,
+      photos,
+    });
 
     Alert.alert(
       'Solicitud enviada',

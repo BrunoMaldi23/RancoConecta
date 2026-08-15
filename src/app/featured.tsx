@@ -2,27 +2,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Linking, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
-import { PROVIDERS } from '../data/providers';
-
-const FEATURED = [
-  {
-    provider: PROVIDERS[0],
-    tag: 'Recomendado por vecinos',
-    reason: 'Trabajo eléctrico bien evaluado y respuesta rápida.',
-  },
-  {
-    provider: PROVIDERS[1],
-    tag: 'Espacio destacado',
-    reason: 'Prestador verificado para energía solar y respaldo.',
-  },
-  {
-    provider: PROVIDERS[2],
-    tag: 'Muy solicitado',
-    reason: 'Gasfitería local con buena disponibilidad.',
-  },
-];
+import { useAppData } from '../contexts/app-data';
 
 export default function FeaturedScreen() {
+  const { featuredProviders } = useAppData();
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.content}>
@@ -44,13 +28,13 @@ export default function FeaturedScreen() {
           </Text>
         </View>
 
-        {FEATURED.map((item) => (
+        {featuredProviders.map((provider, index) => (
           <Pressable
-            key={item.provider.id}
+            key={provider.id}
             onPress={() =>
               router.push({
                 pathname: '/provider/[providerId]',
-                params: { providerId: item.provider.id },
+                params: { providerId: provider.id },
               })
             }
             style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
@@ -61,18 +45,22 @@ export default function FeaturedScreen() {
             <View style={styles.info}>
               <View style={styles.nameRow}>
                 <Text numberOfLines={1} style={styles.name}>
-                  {item.provider.name}
+                  {provider.name}
                 </Text>
-                {item.provider.verified && (
+                {provider.verified && (
                   <Ionicons name="checkmark-circle" size={17} color="#2C689A" />
                 )}
               </View>
-              <Text style={styles.service}>{item.provider.service}</Text>
-              <Text style={styles.reason}>{item.reason}</Text>
+              <Text style={styles.service}>{provider.service}</Text>
+              <Text style={styles.reason}>
+                {index < 2
+                  ? 'Espacio priorizado por administración municipal.'
+                  : 'Recomendado por vecinos para revisión de destacados.'}
+              </Text>
               <View style={styles.footer}>
-                <Text style={styles.tag}>{item.tag}</Text>
+                <Text style={styles.tag}>{index < 2 ? 'Espacio destacado' : 'Recomendado'}</Text>
                 <Pressable
-                  onPress={() => Linking.openURL(`https://wa.me/${item.provider.whatsapp}`)}
+                  onPress={() => Linking.openURL(`https://wa.me/${provider.whatsapp}`)}
                   style={styles.whatsapp}
                 >
                   <Ionicons name="logo-whatsapp" size={15} color="#224D78" />

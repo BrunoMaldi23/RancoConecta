@@ -5,16 +5,18 @@ import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { Alert, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
-import { getProvider } from '../../data/providers';
+import { useAppData } from '../../contexts/app-data';
 
 export default function ProviderProfile() {
   const { providerId } = useLocalSearchParams<{ providerId?: string }>();
   const { width } = useWindowDimensions();
+  const { getProvider, isFavorite, recommendProvider: saveRecommendation, rateProvider, toggleFavorite } = useAppData();
   const provider = getProvider(String(providerId || ''));
   const hasGallery = provider.images.length > 1;
   const coverWidth = Math.min(width, 720) - 32;
   const [recommendationRating, setRecommendationRating] = useState(5);
   const [recommended, setRecommended] = useState(false);
+  const favorite = isFavorite(provider.id);
 
   const callProvider = () => Linking.openURL(`tel:${provider.phone}`);
   const openWhatsApp = () =>
@@ -25,6 +27,7 @@ export default function ProviderProfile() {
     );
 
   const submitRating = () => {
+    rateProvider(provider.id, recommendationRating);
     Alert.alert(
       'Valoración enviada',
       `Gracias. Registramos ${recommendationRating} estrellas para ${provider.name}.`,
@@ -33,6 +36,7 @@ export default function ProviderProfile() {
   };
 
   const recommendProvider = () => {
+    saveRecommendation(provider.id);
     setRecommended(true);
     Alert.alert(
       'Recomendación registrada',
@@ -119,6 +123,9 @@ export default function ProviderProfile() {
           <Pressable onPress={openWhatsApp} style={styles.primary}>
             <Ionicons name="logo-whatsapp" size={19} color="#FFFFFF" />
             <Text style={styles.primaryText}>WhatsApp</Text>
+          </Pressable>
+          <Pressable onPress={() => toggleFavorite(provider.id)} style={styles.favoriteButton}>
+            <Ionicons name={favorite ? 'heart' : 'heart-outline'} size={20} color={favorite ? '#D89222' : '#224D78'} />
           </Pressable>
         </View>
 
@@ -251,6 +258,7 @@ const styles = StyleSheet.create({
   outlineText: { color: '#224D78', fontWeight: '800' },
   primary: { flex: 1, height: 52, borderRadius: 16, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: '#224D78' },
   primaryText: { color: '#FFFFFF', fontWeight: '800' },
+  favoriteButton: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DDE5EC' },
   feedbackRow: { marginTop: 12, flexDirection: 'row', gap: 10, alignItems: 'stretch' },
   ratingCard: { flex: 1.35, minHeight: 122, padding: 13, borderRadius: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E1E6EB' },
   feedbackHeader: { flexDirection: 'row', alignItems: 'center', gap: 7 },

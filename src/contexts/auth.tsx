@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react';
 import { createContext, useContext, useMemo, useState } from 'react';
 
+import { isFirebaseConfigured } from '../lib/firebase';
+import { createCommerceAccount, signInUser, signOutUser } from '../services/firebase-users';
+
 export type UserRole = 'guest' | 'commerce' | 'municipal_admin';
 
 export type AuthUser = {
@@ -36,11 +39,11 @@ type CreateCommerceUserPayload = {
 type AuthContextValue = {
   user: AuthUser | null;
   managedUsers: ManagedUser[];
-  login: (payload: LoginPayload) => { ok: true } | { ok: false; message: string };
+  login: (payload: LoginPayload) => Promise<{ ok: true } | { ok: false; message: string }>;
   createCommerceUser: (
     payload: CreateCommerceUserPayload,
-  ) => { ok: true; user: ManagedUser } | { ok: false; message: string };
-  logout: () => void;
+  ) => Promise<{ ok: true; user: ManagedUser } | { ok: false; message: string }>;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -75,11 +78,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       managedUsers,
-      login: ({ email, password, role }) => {
+      login: async ({ email, password, role }) => {
         const normalizedEmail = email.trim().toLowerCase();
 
         if (!normalizedEmail) {
           return { ok: false, message: 'Ingresa un correo para continuar.' };
+        }
+
+        if (isFirebaseConfigured) {
+          try {
+            const firebaseUser = await signInUser(normalizedEmail, password);
+
+            if (firebaseUser.role !== role) {
+              return { ok: false, message: 'Este usuario no tiene acceso a ese perfil.' };
+            }
+
+            setUser(firebaseUser);
+            return { ok: true };
+          } catch (error) {
+            return {
+              ok: false,
+              message: error instanceof Error ? error.message : 'No se pudo iniciar sesión con Firebase.',
+            };
+          }
         }
 
         const matchedUser = managedUsers.find(
@@ -99,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         return { ok: true };
       },
-      createCommerceUser: ({
+      createCommerceUser: async ({
         name,
         email,
         password,
@@ -124,22 +145,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return { ok: false, message: 'Ya existe un usuario con ese correo.' };
         }
 
-        const nextUser: ManagedUser = {
-          id: `commerce-${normalizedEmail}`,
-          name: name.trim(),
-          email: normalizedEmail,
-          password: password.trim(),
-          role: 'commerce',
-          status: 'PENDING_MUNICIPAL_APPROVAL',
-          businessName: businessName.trim(),
-          serviceName: serviceName.trim(),
-          phone: phone.trim(),
-        };
+        const nextUser = isFirebaseConfigured
+          ? await createCommerceAccount({
+              name: name.trim(),
+              email: normalizedEmail,
+              password: password.trim(),
+              businessName: businessName.trim(),
+              serviceName: serviceName.trim(),
+              phone: phone.trim(),
+            })
+          : {
+              id: `commerce-${normalizedEmail}`,
+              name: name.trim(),
+              email: normalizedEmail,
+              password: password.trim(),
+              role: 'commerce',
+              status: 'PENDING_MUNICIPAL_APPROVAL',
+              businessName: businessName.trim(),
+              serviceName: serviceName.trim(),
+              phone: phone.trim(),
+            } satisfies ManagedUser;
 
         setManagedUsers((current) => [nextUser, ...current]);
         return { ok: true, user: nextUser };
       },
-      logout: () => setUser(null),
+      logout: async () => {
+        if (isFirebaseConfigured) {
+          await signOutUser().catch(() => undefined);
+        }
+
+        setUser(null);
+      },
     }),
     [managedUsers, user],
   );

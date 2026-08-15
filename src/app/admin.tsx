@@ -15,7 +15,11 @@ import {
   View,
 } from 'react-native';
 
-import { PROVIDERS, type Provider } from '../data/providers';
+import {
+  type DirectoryProvider,
+  type ServiceRequestStatus,
+  useAppData,
+} from '../contexts/app-data';
 import { useAuth } from '../contexts/auth';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -50,11 +54,6 @@ const ACCESS_CREDENTIALS: AccessCredential[] = [
   },
 ];
 
-type ManagedProvider = Provider & {
-  plan: 'Base' | 'Destacado';
-  status: SpaceStatus;
-};
-
 type ManagedCategory = {
   id: string;
   name: string;
@@ -69,12 +68,6 @@ type ManagedSubcategory = {
   status: SpaceStatus;
 };
 
-const INITIAL_PROVIDERS: ManagedProvider[] = PROVIDERS.map((provider, index) => ({
-  ...provider,
-  plan: index === 0 ? 'Destacado' : 'Base',
-  status: provider.available ? 'Publicado' : 'Pausado',
-}));
-
 const INITIAL_CATEGORIES: ManagedCategory[] = [
   { id: 'hogar', name: 'Hogar y reparaciones', description: 'Oficios y reparaciones para viviendas.', status: 'Publicado' },
   { id: 'campo', name: 'Jardín y parcela', description: 'Servicios de campo, poda, riego y terrenos.', status: 'Publicado' },
@@ -88,14 +81,24 @@ const INITIAL_SUBCATEGORIES: ManagedSubcategory[] = [
   { id: 'solar', categoryId: 'energia', name: 'Energía solar', status: 'Publicado' },
 ];
 
+const REQUEST_STATUSES: ServiceRequestStatus[] = ['Enviada', 'Respondida', 'Agendada', 'Cerrada'];
+
 export default function AdminScreen() {
   const { user, logout, managedUsers, createCommerceUser } = useAuth();
+  const {
+    createPendingProvider,
+    providers,
+    requests,
+    toggleProviderPlan,
+    toggleProviderPublication,
+    updateProvider,
+    updateRequestStatus,
+  } = useAppData();
   const [accessCode, setAccessCode] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(user?.role === 'municipal_admin');
   const [sessionRole, setSessionRole] = useState<AccessCredential | null>(null);
   const [showAccessCode, setShowAccessCode] = useState(false);
   const [accessError, setAccessError] = useState('');
-  const [providers, setProviders] = useState(INITIAL_PROVIDERS);
   const [businessName, setBusinessName] = useState('');
   const [serviceName, setServiceName] = useState('');
   const [phone, setPhone] = useState('');
@@ -118,9 +121,9 @@ export default function AdminScreen() {
   const [newUserPhone, setNewUserPhone] = useState('');
 
   const stats = useMemo(() => {
-    const published = providers.filter((provider) => provider.status === 'Publicado').length;
+    const published = providers.filter((provider) => provider.publicationStatus === 'Publicado').length;
     const featured = providers.filter((provider) => provider.plan === 'Destacado').length;
-    const paused = providers.filter((provider) => provider.status === 'Pausado').length;
+    const paused = providers.filter((provider) => provider.publicationStatus === 'Pausado').length;
 
     return { published, featured, paused, total: providers.length };
   }, [providers]);
@@ -142,8 +145,8 @@ export default function AdminScreen() {
     setIsAuthorized(true);
   };
 
-  const closeSession = () => {
-    logout();
+  const closeSession = async () => {
+    await logout();
     setIsAuthorized(false);
     setSessionRole(null);
     setShowAccessCode(false);
@@ -159,7 +162,7 @@ export default function AdminScreen() {
     router.replace('/home');
   };
 
-  const startEditingProvider = (provider: ManagedProvider) => {
+  const startEditingProvider = (provider: DirectoryProvider) => {
     setEditingProviderId(provider.id);
     setEditName(provider.name);
     setEditService(provider.service);
@@ -200,53 +203,18 @@ export default function AdminScreen() {
       return;
     }
 
-    setProviders((current) =>
-      current.map((provider) =>
-        provider.id === editingProviderId
-          ? {
-              ...provider,
-              name: editName.trim(),
-              service: editService.trim(),
-              phone: editPhone.trim(),
-              whatsapp: editPhone.replace(/\D/g, ''),
-              images: editImage.trim() ? [editImage.trim(), ...provider.images.slice(1)] : provider.images,
-            }
-          : provider,
-      ),
-    );
+    updateProvider(editingProviderId, {
+      name: editName,
+      service: editService,
+      phone: editPhone,
+      image: editImage,
+    });
     cancelEditingProvider();
-    Alert.alert('Perfil actualizado', 'Los cambios quedaron preparados en el panel.');
+    Alert.alert('Perfil actualizado', 'Los cambios ya se reflejan en el directorio público.');
   };
 
-  const toggleStatus = (providerId: string) => {
-    setProviders((current) =>
-      current.map((provider) =>
-        provider.id === providerId
-          ? {
-              ...provider,
-              status: provider.status === 'Publicado' ? 'Pausado' : 'Publicado',
-              available: provider.status !== 'Publicado',
-            }
-          : provider,
-      ),
-    );
-  };
-
-  const togglePlan = (providerId: string) => {
-    setProviders((current) =>
-      current.map((provider) =>
-        provider.id === providerId
-          ? {
-              ...provider,
-              plan: provider.plan === 'Destacado' ? 'Base' : 'Destacado',
-            }
-          : provider,
-      ),
-    );
-  };
-
-  const createManagedCommerceUser = () => {
-    const result = createCommerceUser({
+  const createManagedCommerceUser = async () => {
+    const result = await createCommerceUser({
       name: newUserName,
       email: newUserEmail,
       password: newUserPassword,
@@ -278,32 +246,13 @@ export default function AdminScreen() {
       return;
     }
 
-    const nextProvider: ManagedProvider = {
-      id: businessName.trim().toLowerCase().replace(/\s+/g, '-'),
+    createPendingProvider({
       name: businessName.trim(),
       service: serviceName.trim(),
-      categoryId: 'hogar',
-      subcategoryId: 'electricidad',
-      locationId: 'lago-ranco',
-      locationName: 'Lago Ranco',
-      rating: 0,
-      reviews: 0,
-      distance: 'Por definir',
-      verified: false,
-      available: false,
       phone: phone.trim(),
-      whatsapp: phone.replace(/\D/g, ''),
-      description: 'Espacio pendiente de completar por administración.',
-      coverage: ['Lago Ranco'],
-      images: [
-        imageUrl.trim() ||
-          'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=1200&q=80',
-      ],
-      plan: 'Base',
-      status: 'Pendiente',
-    };
+      image: imageUrl,
+    });
 
-    setProviders((current) => [nextProvider, ...current]);
     setBusinessName('');
     setServiceName('');
     setPhone('');
@@ -470,6 +419,53 @@ export default function AdminScreen() {
           <Stat label="Destacados" value={stats.featured} icon="star-outline" />
           <Stat label="Pausados" value={stats.paused} icon="pause-circle-outline" />
           <Stat label="Total" value={stats.total} icon="albums-outline" />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Solicitudes de vecinos</Text>
+          <Text style={styles.sectionText}>
+            Cambia el estado visible para el vecino mientras se coordina el servicio.
+          </Text>
+
+          {requests.length === 0 ? (
+            <View style={styles.emptyAdminBox}>
+              <Ionicons name="chatbubble-ellipses-outline" size={24} color="#87929E" />
+              <Text style={styles.emptyAdminText}>Aún no hay solicitudes enviadas.</Text>
+            </View>
+          ) : (
+            requests.map((request) => (
+              <View key={request.id} style={styles.requestRow}>
+                <View style={styles.requestInfo}>
+                  <Text numberOfLines={1} style={styles.simpleTitle}>{request.providerName}</Text>
+                  <Text numberOfLines={2} style={styles.simpleText}>
+                    {request.serviceName} · {request.address}
+                  </Text>
+                  <Text style={styles.requestDetail}>{request.detail}</Text>
+                </View>
+                <View style={styles.statusActions}>
+                  {REQUEST_STATUSES.map((status) => (
+                    <Pressable
+                      key={status}
+                      onPress={() => updateRequestStatus(request.id, status)}
+                      style={[
+                        styles.statusChip,
+                        request.status === status && styles.statusChipActive,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.statusChipText,
+                          request.status === status && styles.statusChipTextActive,
+                        ]}
+                      >
+                        {status}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            ))
+          )}
         </View>
 
         <View style={styles.section}>
@@ -660,7 +656,7 @@ export default function AdminScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Perfiles activos</Text>
           <Text style={styles.sectionText}>
-            Esta lista simula la administración. Luego la conectamos a base de datos.
+            Los cambios de esta lista se reflejan en el directorio público de la app.
           </Text>
 
           {providers.map((provider) => (
@@ -674,11 +670,11 @@ export default function AdminScreen() {
                   <Text
                     style={[
                       styles.statusBadge,
-                      provider.status === 'Pendiente' && styles.pendingBadge,
-                      provider.status === 'Pausado' && styles.pausedBadge,
+                      provider.publicationStatus === 'Pendiente' && styles.pendingBadge,
+                      provider.publicationStatus === 'Pausado' && styles.pausedBadge,
                     ]}
                   >
-                    {provider.status}
+                    {provider.publicationStatus}
                   </Text>
                 </View>
                 <Text style={styles.providerService}>{provider.service}</Text>
@@ -686,12 +682,12 @@ export default function AdminScreen() {
                   {provider.locationName} · Plan {provider.plan}
                 </Text>
                 <View style={styles.actions}>
-                  <Pressable onPress={() => toggleStatus(provider.id)} style={styles.actionButton}>
+                  <Pressable onPress={() => toggleProviderPublication(provider.id)} style={styles.actionButton}>
                     <Text style={styles.actionText}>
-                      {provider.status === 'Publicado' ? 'Pausar' : 'Publicar'}
+                      {provider.publicationStatus === 'Publicado' ? 'Pausar' : 'Publicar'}
                     </Text>
                   </Pressable>
-                  <Pressable onPress={() => togglePlan(provider.id)} style={styles.actionButton}>
+                  <Pressable onPress={() => toggleProviderPlan(provider.id)} style={styles.actionButton}>
                     <Text style={styles.actionText}>
                       {provider.plan === 'Destacado' ? 'Plan base' : 'Destacar'}
                     </Text>
@@ -1086,6 +1082,42 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '800',
   },
+  emptyAdminBox: {
+    minHeight: 74,
+    marginTop: 12,
+    padding: 14,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#E1E6EB',
+  },
+  emptyAdminText: { marginTop: 7, color: '#687786', fontSize: 12, fontWeight: '700' },
+  requestRow: {
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 16,
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#E1E6EB',
+  },
+  requestInfo: { minWidth: 0 },
+  requestDetail: { marginTop: 6, color: '#33485D', fontSize: 12, lineHeight: 17 },
+  statusActions: { marginTop: 10, flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  statusChip: {
+    minHeight: 32,
+    paddingHorizontal: 10,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#DDE5EC',
+  },
+  statusChipActive: { backgroundColor: '#224D78', borderColor: '#224D78' },
+  statusChipText: { color: '#536678', fontSize: 10, fontWeight: '800' },
+  statusChipTextActive: { color: '#FFFFFF' },
   actionButton: {
     minHeight: 34,
     paddingHorizontal: 11,

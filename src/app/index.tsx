@@ -24,6 +24,7 @@ export default function IndexScreen() {
   const [email, setEmail] = useState(role === 'municipal_admin' ? 'admin@lagoranco.cl' : 'comercio@demo.cl');
   const [password, setPassword] = useState(role === 'municipal_admin' ? 'ranco-admin' : 'comercio-demo');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const { height } = useWindowDimensions();
@@ -31,15 +32,24 @@ export default function IndexScreen() {
 
   const returnTo = Array.isArray(params.returnTo) ? params.returnTo[0] : params.returnTo;
 
-  const submit = () => {
-    const result = login({ email, password, role });
+  const submit = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const loginRole: LoginRole = normalizedEmail === 'admin@lagoranco.cl' ? 'municipal_admin' : role;
+
+    setIsSubmitting(true);
+    const result = await login({ email, password, role: loginRole });
+    setIsSubmitting(false);
 
     if (!result.ok) {
       setError(result.message);
       return;
     }
 
-    router.replace(returnTo || (role === 'municipal_admin' ? '/admin' : '/provider-register'));
+    router.replace(returnTo || (loginRole === 'municipal_admin' ? '/admin' : '/provider-register'));
   };
 
   return (
@@ -107,7 +117,9 @@ export default function IndexScreen() {
           {!!error && <Text style={styles.errorText}>{error}</Text>}
 
           <Pressable onPress={submit} style={[styles.primaryButton, compact && styles.primaryButtonCompact]}>
-            <Text style={[styles.primaryButtonText, compact && styles.primaryButtonTextCompact]}>Entrar</Text>
+            <Text style={[styles.primaryButtonText, compact && styles.primaryButtonTextCompact]}>
+              {isSubmitting ? 'Entrando' : 'Entrar'}
+            </Text>
             <Ionicons name="arrow-forward" size={compact ? 22 : 28} color="#FFFFFF" />
           </Pressable>
 

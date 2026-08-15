@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 
-import { PROVIDERS } from '../data/providers';
+import { useAppData } from '../contexts/app-data';
 
 export default function ProvidersScreen() {
   const params = useLocalSearchParams<{
@@ -25,14 +25,16 @@ export default function ProvidersScreen() {
   const subcategoryId = Array.isArray(params.subcategoryId)
     ? params.subcategoryId[0]
     : params.subcategoryId;
+  const { providers } = useAppData();
   const [search, setSearch] = useState('');
 
   const data = useMemo(() => {
     const term = search.trim().toLowerCase();
+    const publicProviders = providers.filter((item) => item.publicationStatus === 'Publicado');
     const scopedProviders = subcategoryId
-      ? PROVIDERS.filter((item) => item.subcategoryId === subcategoryId)
-      : PROVIDERS;
-    const source = scopedProviders.length > 0 ? scopedProviders : PROVIDERS;
+      ? publicProviders.filter((item) => item.subcategoryId === subcategoryId)
+      : publicProviders;
+    const source = scopedProviders.length > 0 ? scopedProviders : publicProviders;
 
     return source.filter((item) => {
       return (
@@ -41,7 +43,7 @@ export default function ProvidersScreen() {
         item.service.toLowerCase().includes(term)
       );
     });
-  }, [search, subcategoryId]);
+  }, [providers, search, subcategoryId]);
 
   return (
     <SafeAreaView style={styles.safe}>
