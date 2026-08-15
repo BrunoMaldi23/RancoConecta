@@ -3,6 +3,8 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
+import { isFirebaseConfigured } from './firebase-config';
+
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -11,13 +13,6 @@ const firebaseConfig = {
   messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
-
-export const isFirebaseConfigured = Boolean(
-  firebaseConfig.apiKey &&
-    firebaseConfig.authDomain &&
-    firebaseConfig.projectId &&
-    firebaseConfig.appId,
-);
 
 export const firebaseApp = isFirebaseConfigured
   ? getApps().length

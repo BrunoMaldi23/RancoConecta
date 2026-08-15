@@ -1,5 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Asset } from 'expo-asset';
 import { Image } from 'expo-image';
+import Head from 'expo-router/head';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -16,6 +18,11 @@ import {
 import { useAuth, type UserRole } from '../contexts/auth';
 
 type LoginRole = Exclude<UserRole, 'guest'>;
+
+const loginBackground = require('../../assets/images/ranco-login-bg-mobile.jpg');
+const loginLogo = require('../../assets/images/logo-ranco-login.png');
+const loginBackgroundUri = Asset.fromModule(loginBackground).uri;
+const loginLogoUri = Asset.fromModule(loginLogo).uri;
 
 export default function IndexScreen() {
   const params = useLocalSearchParams<{ returnTo?: string; role?: LoginRole }>();
@@ -53,89 +60,106 @@ export default function IndexScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Image
-        source={require('../../assets/images/ranco-login-bg.jpg')}
-        style={styles.backgroundImage}
-        contentFit="cover"
-        contentPosition="center"
-      />
-      <View style={styles.backgroundOverlay} />
-      <ScrollView
-        contentContainerStyle={[styles.content, compact && styles.contentCompact]}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={[styles.logoHeader, compact && styles.logoHeaderCompact]}>
-          <Image
-            source={require('../../assets/images/logo-ranco.png')}
-            style={[styles.logo, compact && styles.logoCompact]}
-            contentFit="contain"
-          />
-          <Text style={[styles.title, compact && styles.titleCompact]}>Ranco Conecta</Text>
-          <Text style={[styles.subtitle, compact && styles.subtitleCompact]}>
-            Plataforma Oficial de Servicios Locales
-          </Text>
-        </View>
-
-        <View style={styles.form}>
-          <Text style={[styles.fieldLabel, compact && styles.fieldLabelCompact]}>Correo</Text>
-          <TextInput
-            value={email}
-            onChangeText={(value) => {
-              setEmail(value);
-              setError('');
-            }}
-            placeholder={role === 'municipal_admin' ? 'admin@lagoranco.cl' : 'comercio@demo.cl'}
-            placeholderTextColor="#87929E"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            style={[styles.input, compact && styles.inputCompact]}
-          />
-
-          <Text style={[styles.fieldLabel, compact && styles.fieldLabelCompact]}>Contraseña</Text>
-          <View style={[styles.passwordBox, compact && styles.passwordBoxCompact, !!error && styles.passwordBoxError]}>
-            <TextInput
-              value={password}
-              onChangeText={(value) => {
-                setPassword(value);
-                setError('');
-              }}
-              placeholder={role === 'municipal_admin' ? 'ranco-admin' : 'comercio-demo'}
-              placeholderTextColor="#87929E"
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              returnKeyType="go"
-              onSubmitEditing={submit}
-              style={[styles.passwordInput, compact && styles.passwordInputCompact]}
+    <>
+      <Head>
+        <link rel="preload" as="image" href={loginBackgroundUri} fetchPriority="high" />
+        <link rel="preload" as="image" href={loginLogoUri} fetchPriority="high" />
+      </Head>
+      <SafeAreaView style={styles.safeArea}>
+        <Image
+          source={loginBackground}
+          style={styles.backgroundImage}
+          cachePolicy="memory-disk"
+          contentFit="cover"
+          contentPosition="center"
+          priority="high"
+        />
+        <View style={styles.backgroundOverlay} />
+        <ScrollView
+          contentContainerStyle={[styles.content, compact && styles.contentCompact]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={[styles.logoHeader, compact && styles.logoHeaderCompact]}>
+            <Image
+              source={loginLogo}
+              style={[styles.logo, compact && styles.logoCompact]}
+              cachePolicy="memory-disk"
+              contentFit="contain"
+              priority="high"
             />
-            <Pressable onPress={() => setShowPassword((current) => !current)} style={styles.eyeButton}>
-              <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#536678" />
-            </Pressable>
+            <Text style={[styles.title, compact && styles.titleCompact]}>Ranco Conecta</Text>
+            <Text style={[styles.subtitle, compact && styles.subtitleCompact]}>
+              Plataforma Oficial de Servicios Locales
+            </Text>
           </View>
 
-          {!!error && <Text style={styles.errorText}>{error}</Text>}
+          <View style={styles.form}>
+            <Text style={[styles.fieldLabel, compact && styles.fieldLabelCompact]}>Correo</Text>
+            <TextInput
+              value={email}
+              onChangeText={(value) => {
+                setEmail(value);
+                setError('');
+              }}
+              placeholder={role === 'municipal_admin' ? 'admin@lagoranco.cl' : 'comercio@demo.cl'}
+              placeholderTextColor="#87929E"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              style={[styles.input, compact && styles.inputCompact]}
+            />
 
-          <Pressable onPress={submit} style={[styles.primaryButton, compact && styles.primaryButtonCompact]}>
-            <Text style={[styles.primaryButtonText, compact && styles.primaryButtonTextCompact]}>
-              {isSubmitting ? 'Entrando' : 'Entrar'}
-            </Text>
-            <Ionicons name="arrow-forward" size={compact ? 22 : 28} color="#FFFFFF" />
-          </Pressable>
+            <Text style={[styles.fieldLabel, compact && styles.fieldLabelCompact]}>Contraseña</Text>
+            <View style={[styles.passwordBox, compact && styles.passwordBoxCompact, !!error && styles.passwordBoxError]}>
+              <TextInput
+                value={password}
+                onChangeText={(value) => {
+                  setPassword(value);
+                  setError('');
+                }}
+                placeholder={role === 'municipal_admin' ? 'ranco-admin' : 'comercio-demo'}
+                placeholderTextColor="#87929E"
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                returnKeyType="go"
+                onSubmitEditing={submit}
+                style={[styles.passwordInput, compact && styles.passwordInputCompact]}
+              />
+              <Pressable onPress={() => setShowPassword((current) => !current)} style={styles.eyeButton}>
+                <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#536678" />
+              </Pressable>
+            </View>
 
-          <Pressable onPress={() => router.replace('/home')} style={[styles.guestButton, compact && styles.guestButtonCompact]}>
-            <Text style={[styles.guestButtonText, compact && styles.guestButtonTextCompact]}>
-              Continuar como visitante
-            </Text>
-          </Pressable>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+            {!!error && <Text style={styles.errorText}>{error}</Text>}
+
+            <Pressable onPress={submit} style={[styles.primaryButton, compact && styles.primaryButtonCompact]}>
+              <Text style={[styles.primaryButtonText, compact && styles.primaryButtonTextCompact]}>
+                {isSubmitting ? 'Entrando' : 'Entrar'}
+              </Text>
+              <Ionicons name="arrow-forward" size={compact ? 22 : 28} color="#FFFFFF" />
+            </Pressable>
+
+            <Pressable onPress={() => router.replace('/home')} style={[styles.guestButton, compact && styles.guestButtonCompact]}>
+              <Text style={[styles.guestButtonText, compact && styles.guestButtonTextCompact]}>
+                Continuar como visitante
+              </Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#FBFCF8' },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#DDEAF0',
+    // @ts-expect-error React Native Web accepts CSS background images.
+    backgroundImage: `url(${loginBackgroundUri})`,
+    backgroundPosition: 'center',
+    backgroundSize: 'cover',
+  },
   backgroundImage: {
     ...StyleSheet.absoluteFillObject,
     width: '100%',

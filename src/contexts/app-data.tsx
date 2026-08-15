@@ -1,20 +1,9 @@
 import type { ReactNode } from 'react';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { usePathname } from 'expo-router';
 
 import { PROVIDERS, type Provider } from '../data/providers';
-import { isFirebaseConfigured } from '../lib/firebase';
-import {
-  fetchProviders,
-  fetchRequests,
-  saveProvider,
-  saveRating,
-  saveRecommendation,
-  saveRequest,
-  updateProviderFields,
-  updateProviderPlan,
-  updateProviderPublication,
-  updateRequestStatus as updateRemoteRequestStatus,
-} from '../services/firebase-directory';
+import { isFirebaseConfigured } from '../lib/firebase-config';
 
 export type ServiceRequestStatus = 'Enviada' | 'Respondida' | 'Agendada' | 'Cerrada';
 
@@ -86,6 +75,7 @@ const INITIAL_PROVIDERS: DirectoryProvider[] = PROVIDERS.map((provider) => ({
 }));
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [providers, setProviders] = useState(INITIAL_PROVIDERS);
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
@@ -93,13 +83,14 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const [backendReady, setBackendReady] = useState(false);
 
   useEffect(() => {
-    if (!isFirebaseConfigured) {
+    if (!isFirebaseConfigured || pathname === '/') {
       return;
     }
 
     let mounted = true;
 
-    Promise.all([fetchProviders(), fetchRequests()])
+    import('../services/firebase-directory')
+      .then(({ fetchProviders, fetchRequests }) => Promise.all([fetchProviders(), fetchRequests()]))
       .then(([remoteProviders, remoteRequests]) => {
         if (!mounted) {
           return;
@@ -121,7 +112,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [pathname]);
 
   const value = useMemo<AppDataContextValue>(
     () => ({
@@ -145,7 +136,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
         setRequests((current) => [request, ...current]);
         if (isFirebaseConfigured) {
-          saveRequest(request).catch(() => undefined);
+          import('../services/firebase-directory')
+            .then(({ saveRequest }) => saveRequest(request))
+            .catch(() => undefined);
         }
         return request;
       },
@@ -178,7 +171,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
         setProviders((current) => [provider, ...current]);
         if (isFirebaseConfigured) {
-          saveProvider(provider).catch(() => undefined);
+          import('../services/firebase-directory')
+            .then(({ saveProvider }) => saveProvider(provider))
+            .catch(() => undefined);
         }
         return provider;
       },
@@ -187,7 +182,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           current.map((request) => (request.id === requestId ? { ...request, status } : request)),
         );
         if (isFirebaseConfigured) {
-          updateRemoteRequestStatus(requestId, status).catch(() => undefined);
+          import('../services/firebase-directory')
+            .then(({ updateRequestStatus }) => updateRequestStatus(requestId, status))
+            .catch(() => undefined);
         }
       },
       updateProvider: (providerId, payload) => {
@@ -215,7 +212,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         );
 
         if (isFirebaseConfigured && updatedProvider) {
-          updateProviderFields(providerId, updatedProvider).catch(() => undefined);
+          import('../services/firebase-directory')
+            .then(({ updateProviderFields }) => updateProviderFields(providerId, updatedProvider))
+            .catch(() => undefined);
         }
       },
       toggleProviderPublication: (providerId) => {
@@ -239,7 +238,11 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         );
 
         if (isFirebaseConfigured && nextPublicationStatus) {
-          updateProviderPublication(providerId, nextPublicationStatus).catch(() => undefined);
+          import('../services/firebase-directory')
+            .then(({ updateProviderPublication }) =>
+              updateProviderPublication(providerId, nextPublicationStatus),
+            )
+            .catch(() => undefined);
         }
       },
       toggleProviderPlan: (providerId) => {
@@ -257,7 +260,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         );
 
         if (isFirebaseConfigured && nextPlan) {
-          updateProviderPlan(providerId, nextPlan).catch(() => undefined);
+          import('../services/firebase-directory')
+            .then(({ updateProviderPlan }) => updateProviderPlan(providerId, nextPlan))
+            .catch(() => undefined);
         }
       },
       rateProvider: (providerId, rating) => {
@@ -278,7 +283,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           }),
         );
         if (isFirebaseConfigured) {
-          saveRating(providerId, rating).catch(() => undefined);
+          import('../services/firebase-directory')
+            .then(({ saveRating }) => saveRating(providerId, rating))
+            .catch(() => undefined);
         }
       },
       recommendProvider: (providerId) => {
@@ -291,7 +298,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           ),
         );
         if (isFirebaseConfigured) {
-          saveRecommendation(providerId).catch(() => undefined);
+          import('../services/firebase-directory')
+            .then(({ saveRecommendation }) => saveRecommendation(providerId))
+            .catch(() => undefined);
         }
       },
       toggleFavorite: (providerId) => {

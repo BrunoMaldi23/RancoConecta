@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 import { createContext, useContext, useMemo, useState } from 'react';
 
-import { isFirebaseConfigured } from '../lib/firebase';
-import { createCommerceAccount, signInUser, signOutUser } from '../services/firebase-users';
+import { isFirebaseConfigured } from '../lib/firebase-config';
 
 export type UserRole = 'guest' | 'commerce' | 'municipal_admin';
 
@@ -87,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (isFirebaseConfigured) {
           try {
+            const { signInUser } = await import('../services/firebase-users');
             const firebaseUser = await signInUser(normalizedEmail, password);
 
             if (firebaseUser.role !== role) {
@@ -146,14 +146,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         const nextUser = isFirebaseConfigured
-          ? await createCommerceAccount({
-              name: name.trim(),
-              email: normalizedEmail,
-              password: password.trim(),
-              businessName: businessName.trim(),
-              serviceName: serviceName.trim(),
-              phone: phone.trim(),
-            })
+          ? await import('../services/firebase-users').then(({ createCommerceAccount }) =>
+              createCommerceAccount({
+                name: name.trim(),
+                email: normalizedEmail,
+                password: password.trim(),
+                businessName: businessName.trim(),
+                serviceName: serviceName.trim(),
+                phone: phone.trim(),
+              }),
+            )
           : {
               id: `commerce-${normalizedEmail}`,
               name: name.trim(),
@@ -171,6 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       logout: async () => {
         if (isFirebaseConfigured) {
+          const { signOutUser } = await import('../services/firebase-users');
           await signOutUser().catch(() => undefined);
         }
 
