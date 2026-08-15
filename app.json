@@ -33,6 +33,14 @@
           "imageWidth": 76
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "RancoConecta necesita acceder a tus fotos para adjuntarlas a solicitudes de servicio.",
+          "cameraPermission": "RancoConecta necesita acceder a la cámara para adjuntar fotografías a solicitudes de servicio.",
+          "microphonePermission": false
+        }
+      ],
       "expo-status-bar"
     ],
     "experiments": {

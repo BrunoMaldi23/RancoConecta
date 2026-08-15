@@ -24,6 +24,11 @@ type Subcategory = {
   counts: Record<LocationId, number>;
 };
 
+type Tone = {
+  color: string;
+  background: string;
+};
+
 type CategoryCatalog = {
   name: string;
   subtitle: string;
@@ -45,13 +50,121 @@ const count = (
   riñinahue: rininahue,
 });
 
+const TONES = {
+  brand: { color: '#224D78', background: '#E8EEF4' },
+  water: { color: '#26718A', background: '#DFF1F5' },
+  field: { color: '#287A51', background: '#E2F2E8' },
+  energy: { color: '#9A641D', background: '#F8ECD5' },
+  heat: { color: '#B94738', background: '#F9E4E0' },
+  food: { color: '#A46B22', background: '#F8ECD5' },
+  care: { color: '#A74E6C', background: '#F8E4EB' },
+  clean: { color: '#6C5590', background: '#EEE8F7' },
+  neutral: { color: '#536171', background: '#EEF3F7' },
+} satisfies Record<string, Tone>;
+
+function getServiceTone(item: Subcategory, category: CategoryCatalog): Tone {
+  if (
+    item.id.includes('agua') ||
+    item.id.includes('gasfiteria') ||
+    item.id.includes('pozos') ||
+    item.id.includes('bombas') ||
+    item.id.includes('estanques') ||
+    item.id.includes('filtros') ||
+    item.icon === 'water-outline'
+  ) {
+    return TONES.water;
+  }
+
+  if (
+    item.id.includes('electricidad') ||
+    item.id.includes('solar') ||
+    item.id.includes('generadores') ||
+    item.id.includes('internet') ||
+    item.id.includes('starlink') ||
+    item.id.includes('camaras') ||
+    item.icon === 'flash-outline' ||
+    item.icon === 'wifi-outline' ||
+    item.icon === 'sunny-outline'
+  ) {
+    return TONES.energy;
+  }
+
+  if (
+    item.id.includes('poda') ||
+    item.id.includes('despeje') ||
+    item.id.includes('cercos') ||
+    item.id.includes('riego') ||
+    item.id.includes('lena') ||
+    item.id.includes('maquinaria') ||
+    item.icon === 'leaf-outline'
+  ) {
+    return TONES.field;
+  }
+
+  if (
+    item.id.includes('estufas') ||
+    item.id.includes('pellet') ||
+    item.id.includes('climatizacion') ||
+    item.id.includes('asados') ||
+    item.icon === 'flame-outline'
+  ) {
+    return TONES.heat;
+  }
+
+  if (
+    item.id.includes('comida') ||
+    item.id.includes('reparto') ||
+    item.id.includes('reposteria') ||
+    item.id.includes('catering') ||
+    item.icon === 'restaurant-outline'
+  ) {
+    return TONES.food;
+  }
+
+  if (
+    item.id.includes('enfermeria') ||
+    item.id.includes('adulto') ||
+    item.id.includes('belleza') ||
+    item.id.includes('masajes') ||
+    item.id.includes('mascotas') ||
+    item.icon === 'heart-outline' ||
+    item.icon === 'medkit-outline'
+  ) {
+    return TONES.care;
+  }
+
+  if (
+    item.id.includes('aseo') ||
+    item.id.includes('limpieza') ||
+    item.id.includes('tapices') ||
+    item.icon === 'sparkles-outline'
+  ) {
+    return TONES.clean;
+  }
+
+  if (
+    item.id.includes('fletes') ||
+    item.id.includes('mudanzas') ||
+    item.id.includes('mecanica') ||
+    item.id.includes('gruas') ||
+    item.id.includes('baterias') ||
+    item.id.includes('topografia') ||
+    item.id.includes('soporte') ||
+    item.id.includes('drones')
+  ) {
+    return TONES.brand;
+  }
+
+  return { color: category.color, background: category.background };
+}
+
 const CATALOG: Record<string, CategoryCatalog> = {
   hogar: {
     name: 'Hogar y reparaciones',
     subtitle: 'Soluciones para mantener, reparar y mejorar tu hogar.',
     icon: 'hammer-outline',
-    color: '#A8582B',
-    background: '#FBE9DE',
+    color: '#8B6421',
+    background: '#F8ECD5',
     items: [
       { id: 'electricidad', name: 'Electricidad', description: 'Instalaciones, fallas, enchufes y tableros.', icon: 'flash-outline', counts: count(5, 7, 2, 2) },
       { id: 'gasfiteria', name: 'Gasfitería', description: 'Filtraciones, cañerías, grifería y artefactos.', icon: 'water-outline', counts: count(4, 6, 2, 1) },
@@ -65,8 +178,8 @@ const CATALOG: Record<string, CategoryCatalog> = {
     name: 'Calefacción',
     subtitle: 'Instalación, combustible y mantención para tu hogar.',
     icon: 'flame-outline',
-    color: '#B94738',
-    background: '#F9E4E0',
+    color: '#9A641D',
+    background: '#F8ECD5',
     items: [
       { id: 'estufas-lena', name: 'Estufas a leña', description: 'Instalación, reparación y limpieza.', icon: 'flame-outline', counts: count(5, 6, 3, 2) },
       { id: 'pellet', name: 'Pellet', description: 'Venta, reparto y mantención de estufas.', icon: 'cube-outline', counts: count(4, 5, 2, 1) },
@@ -89,7 +202,7 @@ const CATALOG: Record<string, CategoryCatalog> = {
   },
   fletes: {
     name: 'Fletes y carga', subtitle: 'Traslados, carga y apoyo logístico local.',
-    icon: 'car-outline', color: '#3C6288', background: '#E5EDF6',
+    icon: 'car-outline', color: '#224D78', background: '#E8EEF4',
     items: [
       { id: 'fletes', name: 'Fletes', description: 'Traslado de compras, materiales y carga.', icon: 'car-outline', counts: count(5, 7, 2, 3) },
       { id: 'mudanzas', name: 'Mudanzas', description: 'Traslado de hogares y oficinas.', icon: 'home-outline', counts: count(3, 5, 1, 1) },
@@ -100,7 +213,7 @@ const CATALOG: Record<string, CategoryCatalog> = {
   },
   gastronomia: {
     name: 'Comida y gastronomía', subtitle: 'Sabores locales, preparación y reparto.',
-    icon: 'restaurant-outline', color: '#A46B22', background: '#F9EED7',
+    icon: 'restaurant-outline', color: '#A46B22', background: '#F8ECD5',
     items: [
       { id: 'comida-casera', name: 'Comida casera', description: 'Menús, colaciones y platos preparados.', icon: 'restaurant-outline', counts: count(9, 12, 4, 3) },
       { id: 'reparto', name: 'Reparto de comida', description: 'Delivery disponible en tu sector.', icon: 'bicycle-outline', counts: count(6, 10, 2, 1) },
@@ -111,7 +224,7 @@ const CATALOG: Record<string, CategoryCatalog> = {
   },
   vehiculos: {
     name: 'Vehículos y asistencia', subtitle: 'Mantención y ayuda para seguir en ruta.',
-    icon: 'construct-outline', color: '#536171', background: '#E9EDF1',
+    icon: 'construct-outline', color: '#647584', background: '#EEF3F7',
     items: [
       { id: 'mecanica', name: 'Mecánica', description: 'Diagnóstico, mantención y reparaciones.', icon: 'construct-outline', counts: count(5, 8, 2, 2) },
       { id: 'vulcanizacion', name: 'Vulcanización', description: 'Neumáticos, pinchazos y balanceo.', icon: 'ellipse-outline', counts: count(3, 5, 1, 1) },
@@ -133,7 +246,7 @@ const CATALOG: Record<string, CategoryCatalog> = {
   },
   energia: {
     name: 'Energía y conectividad', subtitle: 'Energía, internet y seguridad para zonas urbanas y rurales.',
-    icon: 'flash-outline', color: '#8B7421', background: '#F8F1D3',
+    icon: 'flash-outline', color: '#8B6421', background: '#F8ECD5',
     items: [
       { id: 'solar', name: 'Energía solar', description: 'Paneles, baterías e instalaciones fotovoltaicas.', icon: 'sunny-outline', counts: count(3, 4, 1, 1) },
       { id: 'generadores', name: 'Generadores', description: 'Venta, instalación y mantención.', icon: 'flash-outline', counts: count(3, 4, 1, 2) },
@@ -166,7 +279,7 @@ const CATALOG: Record<string, CategoryCatalog> = {
   },
   profesionales: {
     name: 'Servicios profesionales', subtitle: 'Especialistas para proyectos, trámites y tecnología.',
-    icon: 'briefcase-outline', color: '#38636B', background: '#E2EFF1',
+    icon: 'briefcase-outline', color: '#224D78', background: '#E8EEF4',
     items: [
       { id: 'topografia', name: 'Topografía', description: 'Mediciones, deslindes y levantamientos.', icon: 'map-outline', counts: count(3, 4, 1, 1) },
       { id: 'tramites', name: 'Trámites y asesoría', description: 'Apoyo documental y gestiones administrativas.', icon: 'document-text-outline', counts: count(4, 6, 1, 1) },
@@ -188,6 +301,9 @@ export default function CategoryScreen() {
   const [search, setSearch] = useState('');
   const { width } = useWindowDimensions();
   const columns = width >= 920 ? 3 : 2;
+  const cardGap = 11;
+  const listWidth = Math.min(width, 920) - 32;
+  const cardWidth = (listWidth - cardGap * (columns - 1)) / columns;
 
   const items = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -207,9 +323,9 @@ export default function CategoryScreen() {
         ListHeaderComponent={
           <>
             <View style={styles.topbar}>
-              <Pressable onPress={() => router.back()} style={styles.backButton}><Ionicons name="arrow-back" size={23} color="#17382A" /></Pressable>
+              <Pressable onPress={() => router.back()} style={styles.backButton}><Ionicons name="arrow-back" size={23} color="#1F446A" /></Pressable>
               <Text numberOfLines={1} style={styles.topbarTitle}>{category.name}</Text>
-              <View style={styles.topbarSpacer} />
+              <Pressable onPress={() => router.replace('/home')} style={styles.backButton}><Ionicons name="home-outline" size={21} color="#224D78" /></Pressable>
             </View>
 
             <View style={styles.hero}>
@@ -217,67 +333,70 @@ export default function CategoryScreen() {
               <Text style={styles.eyebrow}>SERVICIOS EN {locationName.toUpperCase()}</Text>
               <Text style={styles.title}>{category.name}</Text>
               <Text style={styles.subtitle}>{category.subtitle}</Text>
-              <View style={styles.locationBadge}><Ionicons name="location" size={15} color="#276749" /><Text style={styles.locationText}>{locationName}</Text></View>
+              <View style={styles.locationBadge}><Ionicons name="location" size={15} color="#224D78" /><Text style={styles.locationText}>{locationName}</Text></View>
             </View>
 
             <View style={styles.searchBox}>
-              <Ionicons name="search-outline" size={20} color="#718077" />
-              <TextInput value={search} onChangeText={setSearch} placeholder="Buscar dentro de esta categoría" placeholderTextColor="#8B9890" style={styles.searchInput} />
-              {!!search && <Pressable onPress={() => setSearch('')}><Ionicons name="close-circle" size={20} color="#8B9890" /></Pressable>}
+              <Ionicons name="search-outline" size={20} color="#687786" />
+              <TextInput value={search} onChangeText={setSearch} placeholder="Buscar dentro de esta categoría" placeholderTextColor="#87929E" style={styles.searchInput} />
+              {!!search && <Pressable onPress={() => setSearch('')}><Ionicons name="close-circle" size={20} color="#87929E" /></Pressable>}
             </View>
 
             <View style={styles.sectionHeader}><View><Text style={styles.sectionTitle}>Elige un servicio</Text><Text style={styles.sectionSubtitle}>{items.length} subcategorías disponibles</Text></View><View style={styles.counter}><Text style={styles.counterText}>{items.length}</Text></View></View>
           </>
         }
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => router.push({ pathname: '/providers', params: { categoryId, subcategoryId: item.id, locationId, locationName, serviceName: item.name } })}
-            style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-          >
-            <View style={[styles.icon, { backgroundColor: category.background }]}><Ionicons name={item.icon} size={24} color={category.color} /></View>
-            <Text numberOfLines={2} style={styles.cardTitle}>{item.name}</Text>
-            <Text numberOfLines={2} style={styles.cardDescription}>{item.description}</Text>
-            <View style={styles.cardFooter}><View style={styles.countBadge}><View style={styles.dot} /><Text style={styles.countText}>{item.counts[locationId]} disponibles</Text></View><Ionicons name="arrow-forward" size={16} color="#276749" /></View>
-          </Pressable>
-        )}
-        ListEmptyComponent={<View style={styles.empty}><Ionicons name="search-outline" size={40} color="#98A49C" /><Text style={styles.emptyTitle}>No encontramos ese servicio</Text><Text style={styles.emptyText}>Prueba buscando con otra palabra.</Text></View>}
+        renderItem={({ item }) => {
+          const tone = getServiceTone(item, category);
+
+          return (
+            <Pressable
+              onPress={() => router.push({ pathname: '/providers', params: { categoryId, subcategoryId: item.id, locationId, locationName, serviceName: item.name } })}
+              style={({ pressed }) => [styles.card, { width: cardWidth, borderLeftColor: tone.color }, pressed && styles.cardPressed]}
+            >
+              <View style={[styles.icon, { backgroundColor: tone.background }]}><Ionicons name={item.icon} size={24} color={tone.color} /></View>
+              <Text numberOfLines={2} style={styles.cardTitle}>{item.name}</Text>
+              <Text numberOfLines={2} style={styles.cardDescription}>{item.description}</Text>
+              <View style={styles.cardFooter}><View style={styles.countBadge}><View style={[styles.dot, { backgroundColor: tone.color }]} /><Text style={styles.countText}>{item.counts[locationId]} disponibles</Text></View><Ionicons name="arrow-forward" size={16} color="#224D78" /></View>
+            </Pressable>
+          );
+        }}
+        ListEmptyComponent={<View style={styles.empty}><Ionicons name="search-outline" size={40} color="#99A4AF" /><Text style={styles.emptyTitle}>No encontramos ese servicio</Text><Text style={styles.emptyText}>Prueba buscando con otra palabra.</Text></View>}
       />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F5F7F2' },
+  safeArea: { flex: 1, backgroundColor: '#F7F8F4' },
   content: { width: '100%', maxWidth: 920, alignSelf: 'center', paddingHorizontal: 16, paddingBottom: 40 },
   topbar: { height: 72, flexDirection: 'row', alignItems: 'center' },
-  backButton: { width: 43, height: 43, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E0E6E1' },
-  topbarTitle: { flex: 1, marginHorizontal: 12, color: '#17382A', fontSize: 16, fontWeight: '800', textAlign: 'center' },
-  topbarSpacer: { width: 43 },
-  hero: { padding: 23, borderRadius: 26, backgroundColor: '#193E2E' },
+  backButton: { width: 43, height: 43, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E1E6EB' },
+  topbarTitle: { flex: 1, marginHorizontal: 12, color: '#1F446A', fontSize: 16, fontWeight: '800', textAlign: 'center' },
+  hero: { padding: 23, borderRadius: 26, backgroundColor: '#183653' },
   heroIcon: { width: 55, height: 55, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-  eyebrow: { marginTop: 19, color: '#BFD3C4', fontSize: 10, fontWeight: '800', letterSpacing: 1.2 },
+  eyebrow: { marginTop: 19, color: '#D2DEE8', fontSize: 10, fontWeight: '800', letterSpacing: 1.2 },
   title: { marginTop: 7, color: '#FFFFFF', fontSize: 29, lineHeight: 35, fontWeight: '800', letterSpacing: -0.8 },
-  subtitle: { maxWidth: 550, marginTop: 8, color: '#C7D5CB', fontSize: 13, lineHeight: 20 },
+  subtitle: { maxWidth: 550, marginTop: 8, color: '#DCE5ED', fontSize: 13, lineHeight: 20 },
   locationBadge: { alignSelf: 'flex-start', marginTop: 18, paddingHorizontal: 11, paddingVertical: 8, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF' },
-  locationText: { color: '#276749', fontSize: 12, fontWeight: '800' },
-  searchBox: { minHeight: 55, marginTop: 13, paddingHorizontal: 16, borderRadius: 17, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DEE5DF' },
-  searchInput: { flex: 1, marginHorizontal: 10, paddingVertical: 15, color: '#213A2D', fontSize: 14 },
+  locationText: { color: '#224D78', fontSize: 12, fontWeight: '800' },
+  searchBox: { minHeight: 55, marginTop: 13, paddingHorizontal: 16, borderRadius: 17, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DDE5EC' },
+  searchInput: { flex: 1, marginHorizontal: 10, paddingVertical: 15, color: '#253F59', fontSize: 14 },
   sectionHeader: { marginTop: 27, marginBottom: 14, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
-  sectionTitle: { color: '#193A2C', fontSize: 22, fontWeight: '800' },
-  sectionSubtitle: { marginTop: 4, color: '#718077', fontSize: 12 },
-  counter: { minWidth: 35, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 11, backgroundColor: '#E3EEE6' },
-  counterText: { color: '#276749', fontSize: 12, fontWeight: '800', textAlign: 'center' },
+  sectionTitle: { color: '#1F446A', fontSize: 22, fontWeight: '800' },
+  sectionSubtitle: { marginTop: 4, color: '#687786', fontSize: 12 },
+  counter: { minWidth: 35, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 11, backgroundColor: '#EAF1F7' },
+  counterText: { color: '#224D78', fontSize: 12, fontWeight: '800', textAlign: 'center' },
   row: { gap: 11 },
-  card: { flex: 1, minWidth: 0, minHeight: 190, marginBottom: 11, padding: 15, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E0E6E1' },
+  card: { minHeight: 190, marginBottom: 11, padding: 15, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderLeftWidth: 4, borderColor: '#E1E6EB' },
   cardPressed: { opacity: 0.82, transform: [{ scale: 0.985 }] },
   icon: { width: 47, height: 47, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
-  cardTitle: { minHeight: 40, marginTop: 13, color: '#243D30', fontSize: 15, lineHeight: 19, fontWeight: '800' },
-  cardDescription: { flex: 1, marginTop: 4, color: '#748078', fontSize: 11, lineHeight: 16 },
+  cardTitle: { minHeight: 40, marginTop: 13, color: '#243F59', fontSize: 15, lineHeight: 19, fontWeight: '800' },
+  cardDescription: { flex: 1, marginTop: 4, color: '#71808C', fontSize: 11, lineHeight: 16 },
   cardFooter: { marginTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  countBadge: { flexShrink: 1, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#EDF5EF' },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#3C8B5A' },
-  countText: { color: '#397550', fontSize: 10, fontWeight: '800' },
+  countBadge: { flexShrink: 1, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#EDF3F7' },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#2C689A' },
+  countText: { color: '#285B87', fontSize: 10, fontWeight: '800' },
   empty: { paddingVertical: 60, alignItems: 'center' },
-  emptyTitle: { marginTop: 14, color: '#31483A', fontSize: 16, fontWeight: '700' },
-  emptyText: { marginTop: 5, color: '#7D8981', fontSize: 12 },
+  emptyTitle: { marginTop: 14, color: '#33485D', fontSize: 16, fontWeight: '700' },
+  emptyText: { marginTop: 5, color: '#7A8793', fontSize: 12 },
 });
