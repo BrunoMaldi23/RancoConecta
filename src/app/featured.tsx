@@ -31,7 +31,9 @@ export default function FeaturedScreen() {
             <Ionicons name="arrow-back" size={23} color="#1F446A" />
           </Pressable>
           <Text style={styles.barTitle}>Destacados</Text>
-          <View style={styles.spacer} />
+          <Pressable onPress={() => router.replace('/home')} style={styles.backButton}>
+            <Ionicons name="home-outline" size={21} color="#224D78" />
+          </Pressable>
         </View>
 
         <View style={styles.hero}>
@@ -111,7 +113,6 @@ const styles = StyleSheet.create({
     borderColor: '#E1E6EB',
   },
   barTitle: { color: '#1F446A', fontSize: 16, fontWeight: '800' },
-  spacer: { width: 43 },
   hero: {
     marginBottom: 13,
     padding: 22,

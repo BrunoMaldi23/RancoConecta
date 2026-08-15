@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import type { ComponentProps } from "react";
 import { useMemo, useState } from "react";
@@ -16,6 +17,8 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+
+import { useAuth } from "../contexts/auth";
 
 type IconName = ComponentProps<typeof Ionicons>["name"];
 type LocationId = "lago-ranco" | "futrono" | "llifen" | "riñinahue";
@@ -166,19 +169,25 @@ const CATEGORIES: Category[] = [
   },
 ];
 
-const MENU_OPTIONS: Array<{
+const MENU_OPTIONS: {
   id: string;
   label: string;
   icon: IconName;
   route?:
     | "/home"
+    | "/categories"
     | "/featured"
     | "/favorites"
     | "/history"
     | "/contacts";
-}> = [
+}[] = [
   { id: "home", label: "Inicio", icon: "home-outline", route: "/home" },
-  { id: "categories", label: "Categorías", icon: "grid-outline" },
+  {
+    id: "categories",
+    label: "Categorías",
+    icon: "grid-outline",
+    route: "/categories",
+  },
   {
     id: "featured",
     label: "Destacados",
@@ -206,6 +215,7 @@ const MENU_OPTIONS: Array<{
 ];
 
 export default function HomeScreen() {
+  const { user } = useAuth();
   const [menuVisible, setMenuVisible] = useState(false);
   const [locationVisible, setLocationVisible] = useState(false);
   const [selectedLocationId, setSelectedLocationId] =
@@ -221,6 +231,18 @@ export default function HomeScreen() {
   const selectedLocation = LOCATIONS.find(
     (item) => item.id === selectedLocationId,
   )!;
+  const isMunicipalAdmin = user?.role === "municipal_admin";
+  const isCommerce = user?.role === "commerce";
+  const heroTitle = "¿Qué servicio necesitas?";
+  const primaryActionLabel = isMunicipalAdmin
+    ? "Panel"
+    : isCommerce
+      ? "Mi ficha"
+      : "Inscribir";
+  const primaryActionIcon: IconName = isMunicipalAdmin
+    ? "shield-checkmark-outline"
+    : "storefront-outline";
+  const primaryActionRoute = isMunicipalAdmin ? "/admin" : "/provider-register";
 
   const filteredCategories = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -270,16 +292,17 @@ export default function HomeScreen() {
     );
   };
 
-  const openAdministratorAccess = () => {
-    setMenuVisible(false);
-    router.push("/admin");
-  };
-
   const handleMenuPress = (option: (typeof MENU_OPTIONS)[number]) => {
     setMenuVisible(false);
 
     if (option.id === "categories") {
-      setSearch("");
+      router.push({
+        pathname: "/categories",
+        params: {
+          locationId: selectedLocation.id,
+          locationName: selectedLocation.name,
+        },
+      });
       return;
     }
 
@@ -311,23 +334,68 @@ export default function HomeScreen() {
               >
                 <Ionicons name="menu" size={25} color="#1F446A" />
               </Pressable>
-              <View style={styles.brand}>
-                <Text style={styles.brandPrimary}>Ranco</Text>
-                <Text style={styles.brandAccent}>Conecta</Text>
-              </View>
-              <View style={styles.headerButtonSpacer} />
+              <Pressable
+                onPress={() => {
+                  setSearch("");
+                }}
+                style={({ pressed }) => [
+                  styles.brand,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Image
+                  source={require("../../assets/images/logo-ranco.png")}
+                  style={styles.brandLogo}
+                  contentFit="contain"
+                />
+                <View style={styles.brandCopy}>
+                  <Text style={styles.brandPrimary}>Ranco</Text>
+                  <Text style={styles.brandAccent}>Conecta</Text>
+                </View>
+              </Pressable>
+              <Pressable
+                onPress={() => router.push(user ? "/profile" : "/")}
+                style={({ pressed }) => [
+                  styles.headerButton,
+                  user && styles.headerButtonActive,
+                  !user && styles.headerLoginButton,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Ionicons
+                  name={user ? "person" : "log-in-outline"}
+                  size={user ? 20 : 22}
+                  color="#FFFFFF"
+                />
+              </Pressable>
             </View>
+            <View style={styles.topDivider} />
 
             <View style={[styles.hero, compact && styles.heroCompact]}>
-              <Text style={styles.heroEyebrow}>SERVICIOS LOCALES</Text>
               <Text
                 style={[styles.heroTitle, compact && styles.heroTitleCompact]}
               >
-                Encuentra ayuda cerca de ti
+                {heroTitle}
               </Text>
-              <Text style={styles.heroDescription}>
-                Busca prestadores disponibles en la localidad que necesitas.
-              </Text>
+            </View>
+
+            <View style={styles.searchContainer}>
+              <Ionicons name="search-outline" size={21} color="#687786" />
+              <TextInput
+                value={search}
+                onChangeText={setSearch}
+                placeholder={`Buscar servicios en ${selectedLocation.name}`}
+                placeholderTextColor="#5F7080"
+                style={styles.searchInput}
+              />
+              {search.length > 0 && (
+                <Pressable onPress={() => setSearch("")}>
+                  <Ionicons name="close-circle" size={21} color="#87929E" />
+                </Pressable>
+              )}
+            </View>
+
+            <View style={styles.homeActions}>
               <Pressable
                 onPress={() => setLocationVisible(true)}
                 style={({ pressed }) => [
@@ -348,22 +416,28 @@ export default function HomeScreen() {
                   <Ionicons name="chevron-down" size={18} color="#224D78" />
                 </View>
               </Pressable>
-            </View>
-
-            <View style={styles.searchContainer}>
-              <Ionicons name="search-outline" size={21} color="#687786" />
-              <TextInput
-                value={search}
-                onChangeText={setSearch}
-                placeholder={`Buscar servicios en ${selectedLocation.name}`}
-                placeholderTextColor="#5F7080"
-                style={styles.searchInput}
-              />
-              {search.length > 0 && (
-                <Pressable onPress={() => setSearch("")}>
-                  <Ionicons name="close-circle" size={21} color="#87929E" />
-                </Pressable>
-              )}
+              <Pressable
+                onPress={() => router.push(primaryActionRoute)}
+                style={({ pressed }) => [
+                  styles.commerceCta,
+                  user && styles.commerceCtaActive,
+                  pressed && styles.locationSelectorPressed,
+                ]}
+              >
+                <Ionicons
+                  name={primaryActionIcon}
+                  size={19}
+                  color={user ? "#FFFFFF" : "#224D78"}
+                />
+                <Text style={[styles.commerceCtaText, user && styles.commerceCtaTextActive]}>
+                  {primaryActionLabel}
+                </Text>
+                <Ionicons
+                  name="arrow-forward"
+                  size={16}
+                  color={user ? "#FFFFFF" : "#224D78"}
+                />
+              </Pressable>
             </View>
 
             <View style={styles.contextRow}>
@@ -420,7 +494,7 @@ export default function HomeScreen() {
                     { backgroundColor: item.iconBackground },
                   ]}
                 >
-                  <Ionicons name={item.icon} size={25} color={item.iconColor} />
+                  <Ionicons name={item.icon} size={22} color={item.iconColor} />
                 </View>
                 <View style={styles.availableBadge}>
                   <View style={styles.availableDot} />
@@ -430,7 +504,7 @@ export default function HomeScreen() {
               <Text numberOfLines={2} style={styles.categoryName}>
                 {item.name}
               </Text>
-              <Text numberOfLines={2} style={styles.categoryDescription}>
+              <Text numberOfLines={1} style={styles.categoryDescription}>
                 {item.description}
               </Text>
               <View style={styles.exploreContainer}>
@@ -562,7 +636,11 @@ export default function HomeScreen() {
             >
               <View style={styles.drawerHeader}>
                 <View style={styles.drawerLogo}>
-                  <Ionicons name="location" size={25} color="#FFFFFF" />
+                  <Image
+                    source={require("../../assets/images/logo-ranco.png")}
+                    style={styles.drawerLogoImage}
+                    contentFit="contain"
+                  />
                 </View>
                 <View style={styles.drawerBrand}>
                   <Text style={styles.drawerBrandPrimary}>Ranco</Text>
@@ -593,6 +671,38 @@ export default function HomeScreen() {
                 </View>
                 <Ionicons name="swap-horizontal" size={18} color="#224D78" />
               </Pressable>
+              <View style={styles.accountBox}>
+                <View style={styles.accountIcon}>
+                  <Ionicons
+                    name={user ? "person" : "person-outline"}
+                    size={20}
+                    color="#224D78"
+                  />
+                </View>
+                <View style={styles.accountInfo}>
+                  <Text numberOfLines={1} style={styles.accountTitle}>
+                    {user ? user.name : "Modo visitante"}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.accountText}>
+                    {user
+                      ? user.email
+                      : "Explora servicios sin iniciar sesión."}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={() => {
+                    setMenuVisible(false);
+                    router.push(user ? "/profile" : "/");
+                  }}
+                  style={styles.accountAction}
+                >
+                  <Ionicons
+                    name={user ? "chevron-forward" : "person-add-outline"}
+                    size={18}
+                    color="#FFFFFF"
+                  />
+                </Pressable>
+              </View>
               <View style={styles.menuList}>
                 {MENU_OPTIONS.map((option, index) => (
                   <Pressable
@@ -632,11 +742,13 @@ export default function HomeScreen() {
                   pressed && styles.pressed,
                 ]}
               >
-                <Ionicons
-                  name="chatbubble-ellipses-outline"
-                  size={20}
-                  color="#224D78"
-                />
+                <View style={styles.adminContactIcon}>
+                  <Ionicons
+                    name="chatbubble-ellipses-outline"
+                    size={18}
+                    color="#224D78"
+                  />
+                </View>
                 <View style={styles.adminContactText}>
                   <Text style={styles.adminContactTitle}>
                     Contactar administrador
@@ -646,13 +758,6 @@ export default function HomeScreen() {
                   </Text>
                 </View>
                 <Ionicons name="arrow-forward" size={17} color="#224D78" />
-              </Pressable>
-
-              <Pressable
-                onPress={openAdministratorAccess}
-                style={styles.adminAccess}
-              >
-                <Text style={styles.adminAccessText}>Acceso a administración</Text>
               </Pressable>
             </ScrollView>
           </SafeAreaView>
@@ -672,7 +777,7 @@ const styles = StyleSheet.create({
     paddingBottom: 42,
   },
   header: {
-    height: 76,
+    minHeight: 72,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -687,104 +792,139 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E1E6EB",
   },
+  headerButtonActive: {
+    backgroundColor: "#224D78",
+    borderColor: "#224D78",
+  },
+  headerLoginButton: {
+    backgroundColor: "#B8423B",
+    borderColor: "#C9362C",
+  },
   headerButtonSpacer: {
     width: 43,
     height: 43,
   },
   pressed: { opacity: 0.72 },
-  brand: { flexDirection: "row" },
+  brand: {
+    minHeight: 48,
+    flex: 1,
+    marginHorizontal: 10,
+    paddingHorizontal: 10,
+    borderRadius: 17,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E1E6EB",
+  },
+  brandLogo: {
+    width: 34,
+    height: 34,
+    marginRight: 9,
+  },
+  brandCopy: { flexDirection: "row", alignItems: "center" },
   brandPrimary: {
     color: "#1F446A",
-    fontSize: 21,
-    fontWeight: "800",
+    fontSize: 18,
+    fontWeight: "700",
     letterSpacing: 0,
   },
   brandAccent: {
     color: "#D89222",
-    fontSize: 21,
-    fontWeight: "800",
+    fontSize: 18,
+    fontWeight: "700",
     letterSpacing: 0,
   },
   hero: {
-    minHeight: 246,
-    padding: 25,
-    borderRadius: 28,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E1E6EB",
-    overflow: "hidden",
+    paddingTop: 8,
+    paddingBottom: 2,
   },
-  heroCompact: { paddingHorizontal: 21 },
-  heroEyebrow: {
-    color: "#B97012",
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1.1,
+  topDivider: {
+    height: 1,
+    marginBottom: 14,
+    backgroundColor: "#E6EBEF",
   },
+  heroCompact: {},
   heroTitle: {
     maxWidth: 520,
-    marginTop: 10,
     color: "#1F446A",
-    fontSize: 31,
-    lineHeight: 37,
-    fontWeight: "800",
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: "700",
     letterSpacing: 0,
   },
-  heroTitleCompact: { fontSize: 29, lineHeight: 35 },
-  heroDescription: {
-    maxWidth: 520,
-    marginTop: 9,
-    color: "#42586C",
-    fontSize: 14,
-    lineHeight: 22,
-    fontWeight: "500",
-  },
-  locationSelector: {
-    minHeight: 70,
-    marginTop: 23,
-    padding: 10,
-    borderRadius: 18,
+  heroTitleCompact: { fontSize: 21, lineHeight: 27 },
+  homeActions: {
+    marginTop: 10,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F7F8F4",
+    gap: 8,
+  },
+  locationSelector: {
+    minHeight: 50,
+    flex: 1,
+    padding: 8,
+    borderRadius: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#E1E6EB",
   },
   locationSelectorPressed: { transform: [{ scale: 0.99 }], opacity: 0.94 },
   locationIcon: {
-    width: 45,
-    height: 45,
-    borderRadius: 14,
+    width: 34,
+    height: 34,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#D89222",
   },
-  locationInformation: { flex: 1, marginLeft: 12 },
+  locationInformation: { flex: 1, marginLeft: 10 },
   locationLabel: {
     color: "#647584",
-    fontSize: 10,
-    fontWeight: "800",
+    fontSize: 8,
+    fontWeight: "700",
     letterSpacing: 0.8,
   },
   locationName: {
-    marginTop: 3,
+    marginTop: 2,
     color: "#1F446A",
-    fontSize: 17,
-    fontWeight: "800",
+    fontSize: 13,
+    fontWeight: "700",
   },
   chevronCircle: {
-    width: 35,
-    height: 35,
+    width: 29,
+    height: 29,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#EAF1F7",
   },
+  commerceCta: {
+    minHeight: 50,
+    minWidth: 92,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+    backgroundColor: "#EAF1F7",
+  },
+  commerceCtaActive: { backgroundColor: "#224D78" },
+  commerceCtaText: {
+    color: "#224D78",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  commerceCtaTextActive: { color: "#FFFFFF" },
   searchContainer: {
-    minHeight: 56,
-    marginTop: 14,
-    paddingHorizontal: 17,
-    borderRadius: 17,
+    minHeight: 52,
+    marginTop: 12,
+    paddingHorizontal: 15,
+    borderRadius: 16,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFFFFF",
@@ -816,8 +956,8 @@ const styles = StyleSheet.create({
   contextText: { flex: 1, color: "#4F6171", fontSize: 12, fontWeight: "500" },
   providerCount: { color: "#224D78", fontSize: 12, fontWeight: "800" },
   sectionHeader: {
-    marginTop: 28,
-    marginBottom: 15,
+    marginTop: 23,
+    marginBottom: 12,
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "space-between",
@@ -825,8 +965,8 @@ const styles = StyleSheet.create({
   sectionCopy: { flex: 1 },
   sectionTitle: {
     color: "#1F446A",
-    fontSize: 23,
-    fontWeight: "800",
+    fontSize: 21,
+    fontWeight: "700",
     letterSpacing: 0,
   },
   sectionSubtitle: { marginTop: 4, color: "#4F6171", fontSize: 12, fontWeight: "500" },
@@ -840,15 +980,15 @@ const styles = StyleSheet.create({
   counterText: {
     color: "#224D78",
     fontSize: 12,
-    fontWeight: "800",
+    fontWeight: "700",
     textAlign: "center",
   },
-  categoryRow: { gap: 11 },
+  categoryRow: { gap: 9 },
   categoryCard: {
-    minHeight: 205,
-    marginBottom: 11,
-    padding: 15,
-    borderRadius: 20,
+    minHeight: 154,
+    marginBottom: 9,
+    padding: 12,
+    borderRadius: 17,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#E1E6EB",
@@ -860,16 +1000,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   categoryIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 15,
+    width: 40,
+    height: 40,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
   },
   availableBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 10,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: 9,
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
@@ -881,30 +1021,29 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: "#2C689A",
   },
-  availableText: { color: "#285B87", fontSize: 11, fontWeight: "800" },
+  availableText: { color: "#285B87", fontSize: 10, fontWeight: "700" },
   categoryName: {
-    minHeight: 42,
-    marginTop: 14,
+    minHeight: 36,
+    marginTop: 11,
     color: "#243F59",
-    fontSize: 15,
-    lineHeight: 20,
-    fontWeight: "800",
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "700",
   },
   categoryDescription: {
-    flex: 1,
-    marginTop: 4,
+    marginTop: 3,
     color: "#536678",
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 10,
+    lineHeight: 14,
     fontWeight: "500",
   },
   exploreContainer: {
-    marginTop: 11,
+    marginTop: 10,
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
   },
-  exploreText: { color: "#224D78", fontSize: 11, fontWeight: "800" },
+  exploreText: { color: "#224D78", fontSize: 10, fontWeight: "700" },
   emptyContainer: { paddingVertical: 60, alignItems: "center" },
   emptyTitle: {
     marginTop: 14,
@@ -986,90 +1125,144 @@ const styles = StyleSheet.create({
     backgroundColor: "#EEF3F7",
   },
   drawer: {
-    width: "84%",
-    maxWidth: 365,
+    width: "82%",
+    maxWidth: 350,
     height: "100%",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#FBFCF8",
   },
-  drawerContent: { flexGrow: 1, padding: 21 },
-  drawerHeader: { flexDirection: "row", alignItems: "center" },
+  drawerContent: { flexGrow: 1, padding: 16 },
+  drawerHeader: {
+    minHeight: 50,
+    flexDirection: "row",
+    alignItems: "center",
+  },
   drawerLogo: {
-    width: 45,
-    height: 45,
+    width: 42,
+    height: 42,
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#224D78",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E1E6EB",
   },
+  drawerLogoImage: { width: 35, height: 35 },
   drawerBrand: { flex: 1, marginLeft: 10, flexDirection: "row" },
-  drawerBrandPrimary: { color: "#1F446A", fontSize: 18, fontWeight: "800" },
-  drawerBrandAccent: { color: "#D89222", fontSize: 18, fontWeight: "800" },
+  drawerBrandPrimary: { color: "#1F446A", fontSize: 16, fontWeight: "700" },
+  drawerBrandAccent: { color: "#D89222", fontSize: 16, fontWeight: "700" },
   drawerLocation: {
-    marginTop: 25,
-    padding: 14,
-    borderRadius: 16,
+    minHeight: 47,
+    marginTop: 16,
+    paddingHorizontal: 11,
+    borderRadius: 15,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#EEF3F7",
+    backgroundColor: "#F0F5F8",
+    borderWidth: 1,
+    borderColor: "#E1E8EE",
   },
-  drawerLocationInformation: { flex: 1, marginLeft: 10 },
-  drawerLocationLabel: { color: "#536678", fontSize: 10, fontWeight: "700" },
+  drawerLocationInformation: { flex: 1, marginLeft: 9 },
+  drawerLocationLabel: { color: "#536678", fontSize: 10, fontWeight: "600" },
   drawerLocationValue: {
     marginTop: 2,
     color: "#284B6E",
     fontSize: 13,
     fontWeight: "700",
   },
-  menuList: { marginTop: 22, gap: 5 },
+  accountBox: {
+    minHeight: 66,
+    marginTop: 12,
+    padding: 10,
+    borderRadius: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#DDE5EC",
+  },
+  accountIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F0F5F8",
+  },
+  accountInfo: { flex: 1, minWidth: 0 },
+  accountTitle: {
+    color: "#1F446A",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  accountText: {
+    marginTop: 3,
+    color: "#687786",
+    fontSize: 10,
+    lineHeight: 14,
+  },
+  accountAction: {
+    width: 32,
+    height: 32,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#C9362C",
+  },
+  menuList: {
+    marginTop: 12,
+    paddingVertical: 5,
+    borderRadius: 17,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E1E6EB",
+  },
   menuOption: {
-    minHeight: 50,
+    minHeight: 44,
     paddingHorizontal: 12,
-    borderRadius: 14,
+    borderRadius: 13,
     flexDirection: "row",
     alignItems: "center",
   },
   activeMenuOption: { backgroundColor: "#EAF1F7" },
   menuOptionText: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 11,
     color: "#647584",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
   },
   activeMenuOptionText: { color: "#224D78", fontWeight: "700" },
   adminContact: {
-    minHeight: 74,
-    marginTop: 28,
-    padding: 14,
-    borderRadius: 16,
+    minHeight: 66,
+    marginTop: 12,
+    padding: 11,
+    borderRadius: 17,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 11,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#DDE5EC",
+  },
+  adminContactIcon: {
+    width: 35,
+    height: 35,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EAF1F7",
   },
   adminContactText: { flex: 1 },
   adminContactTitle: {
     color: "#1F446A",
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "700",
   },
   adminContactDescription: {
     marginTop: 3,
     color: "#687786",
-    fontSize: 11,
-    lineHeight: 15,
-  },
-  adminAccess: {
-    marginTop: 18,
-    alignSelf: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-  },
-  adminAccessText: {
-    color: "#9AA5AF",
     fontSize: 10,
-    fontWeight: "600",
+    lineHeight: 14,
   },
 });

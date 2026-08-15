@@ -34,7 +34,9 @@ export default function HistoryScreen() {
             <Ionicons name="arrow-back" size={23} color="#1F446A" />
           </Pressable>
           <Text style={styles.barTitle}>Historial</Text>
-          <View style={styles.spacer} />
+          <Pressable onPress={() => router.replace('/home')} style={styles.backButton}>
+            <Ionicons name="home-outline" size={21} color="#224D78" />
+          </Pressable>
         </View>
 
         <Text style={styles.title}>Servicios contactados</Text>
@@ -115,7 +117,6 @@ const styles = StyleSheet.create({
     borderColor: '#E1E6EB',
   },
   barTitle: { color: '#1F446A', fontSize: 16, fontWeight: '800' },
-  spacer: { width: 43 },
   title: {
     marginTop: 10,
     color: '#1F446A',

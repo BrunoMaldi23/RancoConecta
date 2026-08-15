@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { useMemo, useState } from 'react';
 import {
@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 
 import { PROVIDERS, type Provider } from '../data/providers';
+import { useAuth } from '../contexts/auth';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -88,8 +89,9 @@ const INITIAL_SUBCATEGORIES: ManagedSubcategory[] = [
 ];
 
 export default function AdminScreen() {
+  const { user, logout, managedUsers, createCommerceUser } = useAuth();
   const [accessCode, setAccessCode] = useState('');
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(user?.role === 'municipal_admin');
   const [sessionRole, setSessionRole] = useState<AccessCredential | null>(null);
   const [showAccessCode, setShowAccessCode] = useState(false);
   const [accessError, setAccessError] = useState('');
@@ -108,6 +110,12 @@ export default function AdminScreen() {
   const [editService, setEditService] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editImage, setEditImage] = useState('');
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [newUserBusiness, setNewUserBusiness] = useState('');
+  const [newUserService, setNewUserService] = useState('');
+  const [newUserPhone, setNewUserPhone] = useState('');
 
   const stats = useMemo(() => {
     const published = providers.filter((provider) => provider.status === 'Publicado').length;
@@ -135,9 +143,11 @@ export default function AdminScreen() {
   };
 
   const closeSession = () => {
+    logout();
     setIsAuthorized(false);
     setSessionRole(null);
     setShowAccessCode(false);
+    router.replace('/home');
   };
 
   const goBack = () => {
@@ -232,6 +242,33 @@ export default function AdminScreen() {
             }
           : provider,
       ),
+    );
+  };
+
+  const createManagedCommerceUser = () => {
+    const result = createCommerceUser({
+      name: newUserName,
+      email: newUserEmail,
+      password: newUserPassword,
+      businessName: newUserBusiness,
+      serviceName: newUserService,
+      phone: newUserPhone,
+    });
+
+    if (!result.ok) {
+      Alert.alert('No se pudo crear', result.message);
+      return;
+    }
+
+    setNewUserName('');
+    setNewUserEmail('');
+    setNewUserPassword('');
+    setNewUserBusiness('');
+    setNewUserService('');
+    setNewUserPhone('');
+    Alert.alert(
+      'Usuario creado',
+      `Entrega estas credenciales al comercio:\n\nCorreo: ${result.user.email}\nClave: ${result.user.password}`,
     );
   };
 
@@ -331,6 +368,21 @@ export default function AdminScreen() {
     );
   };
 
+  if (!user) {
+    return (
+      <Redirect
+        href={{
+          pathname: '/',
+          params: { role: 'municipal_admin', returnTo: '/admin' },
+        }}
+      />
+    );
+  }
+
+  if (user.role !== 'municipal_admin') {
+    return <Redirect href="/home" />;
+  }
+
   if (!isAuthorized) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -418,6 +470,79 @@ export default function AdminScreen() {
           <Stat label="Destacados" value={stats.featured} icon="star-outline" />
           <Stat label="Pausados" value={stats.paused} icon="pause-circle-outline" />
           <Stat label="Total" value={stats.total} icon="albums-outline" />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Usuarios y perfiles</Text>
+          <Text style={styles.sectionText}>
+            Crea el acceso interno para un comercio. El usuario queda pendiente hasta validar el permiso municipal.
+          </Text>
+          <TextInput
+            value={newUserName}
+            onChangeText={setNewUserName}
+            placeholder="Nombre de contacto"
+            placeholderTextColor="#87929E"
+            style={styles.input}
+          />
+          <TextInput
+            value={newUserEmail}
+            onChangeText={setNewUserEmail}
+            placeholder="Correo de acceso"
+            placeholderTextColor="#87929E"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            style={styles.input}
+          />
+          <TextInput
+            value={newUserPassword}
+            onChangeText={setNewUserPassword}
+            placeholder="Clave temporal"
+            placeholderTextColor="#87929E"
+            autoCapitalize="none"
+            style={styles.input}
+          />
+          <TextInput
+            value={newUserBusiness}
+            onChangeText={setNewUserBusiness}
+            placeholder="Nombre del negocio"
+            placeholderTextColor="#87929E"
+            style={styles.input}
+          />
+          <TextInput
+            value={newUserService}
+            onChangeText={setNewUserService}
+            placeholder="Servicio principal"
+            placeholderTextColor="#87929E"
+            style={styles.input}
+          />
+          <TextInput
+            value={newUserPhone}
+            onChangeText={setNewUserPhone}
+            placeholder="Teléfono o WhatsApp"
+            placeholderTextColor="#87929E"
+            keyboardType="phone-pad"
+            style={styles.input}
+          />
+          <Pressable onPress={createManagedCommerceUser} style={styles.secondaryButton}>
+            <Ionicons name="person-add-outline" size={19} color="#224D78" />
+            <Text style={styles.secondaryButtonText}>Crear usuario de comercio</Text>
+          </Pressable>
+
+          {managedUsers
+            .filter((managedUser) => managedUser.role === 'commerce')
+            .map((managedUser) => (
+              <View key={managedUser.id} style={styles.userRow}>
+                <View style={styles.userIcon}>
+                  <Ionicons name="storefront-outline" size={18} color="#224D78" />
+                </View>
+                <View style={styles.userInfo}>
+                  <Text style={styles.simpleTitle}>{managedUser.businessName || managedUser.name}</Text>
+                  <Text style={styles.simpleText}>{managedUser.email}</Text>
+                  <Text style={styles.userCredential}>Clave: {managedUser.password}</Text>
+                </View>
+                <Text style={styles.userStatus}>Pendiente</Text>
+              </View>
+            ))}
         </View>
 
         <View style={styles.section}>
@@ -924,6 +1049,43 @@ const styles = StyleSheet.create({
   simpleInfo: { flex: 1 },
   simpleTitle: { color: '#243F59', fontSize: 13, fontWeight: '800' },
   simpleText: { marginTop: 3, color: '#687786', fontSize: 11, lineHeight: 15 },
+  userRow: {
+    minHeight: 78,
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#E1E6EB',
+  },
+  userIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EAF1F7',
+  },
+  userInfo: { flex: 1 },
+  userCredential: {
+    marginTop: 4,
+    color: '#8B6421',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  userStatus: {
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 9,
+    overflow: 'hidden',
+    color: '#8B6421',
+    backgroundColor: '#F6EFE3',
+    fontSize: 9,
+    fontWeight: '800',
+  },
   actionButton: {
     minHeight: 34,
     paddingHorizontal: 11,

@@ -9,7 +9,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useWindowDimensions,
   View,
 } from 'react-native';
 
@@ -299,11 +298,6 @@ export default function CategoryScreen() {
   const locationName = locationNameParam || 'Lago Ranco';
   const category = CATALOG[categoryId ?? 'hogar'] ?? CATALOG.hogar;
   const [search, setSearch] = useState('');
-  const { width } = useWindowDimensions();
-  const columns = width >= 920 ? 3 : 2;
-  const cardGap = 11;
-  const listWidth = Math.min(width, 920) - 32;
-  const cardWidth = (listWidth - cardGap * (columns - 1)) / columns;
 
   const items = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -313,28 +307,26 @@ export default function CategoryScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <FlatList
-        key={columns}
         data={items}
-        numColumns={columns}
         keyExtractor={(item) => item.id}
-        columnWrapperStyle={styles.row}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <>
             <View style={styles.topbar}>
               <Pressable onPress={() => router.back()} style={styles.backButton}><Ionicons name="arrow-back" size={23} color="#1F446A" /></Pressable>
-              <Text numberOfLines={1} style={styles.topbarTitle}>{category.name}</Text>
+              <View style={styles.topbarCenter}>
+                <View style={[styles.topbarIcon, { backgroundColor: category.background }]}>
+                  <Ionicons name={category.icon} size={18} color={category.color} />
+                </View>
+                <View style={styles.topbarCopy}>
+                  <Text numberOfLines={1} style={styles.topbarTitle}>{category.name}</Text>
+                  <Text numberOfLines={1} style={styles.topbarSubtitle}>{locationName}</Text>
+                </View>
+              </View>
               <Pressable onPress={() => router.replace('/home')} style={styles.backButton}><Ionicons name="home-outline" size={21} color="#224D78" /></Pressable>
             </View>
-
-            <View style={styles.hero}>
-              <View style={[styles.heroIcon, { backgroundColor: category.background }]}><Ionicons name={category.icon} size={30} color={category.color} /></View>
-              <Text style={styles.eyebrow}>SERVICIOS EN {locationName.toUpperCase()}</Text>
-              <Text style={styles.title}>{category.name}</Text>
-              <Text style={styles.subtitle}>{category.subtitle}</Text>
-              <View style={styles.locationBadge}><Ionicons name="location" size={15} color="#224D78" /><Text style={styles.locationText}>{locationName}</Text></View>
-            </View>
+            <View style={styles.topDivider} />
 
             <View style={styles.searchBox}>
               <Ionicons name="search-outline" size={20} color="#687786" />
@@ -342,7 +334,8 @@ export default function CategoryScreen() {
               {!!search && <Pressable onPress={() => setSearch('')}><Ionicons name="close-circle" size={20} color="#87929E" /></Pressable>}
             </View>
 
-            <View style={styles.sectionHeader}><View><Text style={styles.sectionTitle}>Elige un servicio</Text><Text style={styles.sectionSubtitle}>{items.length} subcategorías disponibles</Text></View><View style={styles.counter}><Text style={styles.counterText}>{items.length}</Text></View></View>
+            <View style={styles.sectionHeader}><View><Text style={styles.sectionTitle}>Elige un servicio</Text><Text style={styles.sectionSubtitle}>{items.length} subcategorías disponibles</Text></View></View>
+            <View style={styles.listDivider} />
           </>
         }
         renderItem={({ item }) => {
@@ -351,12 +344,17 @@ export default function CategoryScreen() {
           return (
             <Pressable
               onPress={() => router.push({ pathname: '/providers', params: { categoryId, subcategoryId: item.id, locationId, locationName, serviceName: item.name } })}
-              style={({ pressed }) => [styles.card, { width: cardWidth, borderLeftColor: tone.color }, pressed && styles.cardPressed]}
+              style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
             >
               <View style={[styles.icon, { backgroundColor: tone.background }]}><Ionicons name={item.icon} size={24} color={tone.color} /></View>
-              <Text numberOfLines={2} style={styles.cardTitle}>{item.name}</Text>
-              <Text numberOfLines={2} style={styles.cardDescription}>{item.description}</Text>
-              <View style={styles.cardFooter}><View style={styles.countBadge}><View style={[styles.dot, { backgroundColor: tone.color }]} /><Text style={styles.countText}>{item.counts[locationId]} disponibles</Text></View><Ionicons name="arrow-forward" size={16} color="#224D78" /></View>
+              <View style={styles.cardCopy}>
+                <Text numberOfLines={1} style={styles.cardTitle}>{item.name}</Text>
+                <Text numberOfLines={2} style={styles.cardDescription}>{item.description}</Text>
+              </View>
+              <View style={styles.cardAction}>
+                <View style={styles.countBadge}><View style={[styles.dot, { backgroundColor: tone.color }]} /><Text style={styles.countText}>{item.counts[locationId]}</Text></View>
+                <Ionicons name="chevron-forward" size={18} color="#99A4AF" />
+              </View>
             </Pressable>
           );
         }}
@@ -368,32 +366,29 @@ export default function CategoryScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#F7F8F4' },
-  content: { width: '100%', maxWidth: 920, alignSelf: 'center', paddingHorizontal: 16, paddingBottom: 40 },
-  topbar: { height: 72, flexDirection: 'row', alignItems: 'center' },
+  content: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 16, paddingBottom: 40 },
+  topbar: { minHeight: 72, flexDirection: 'row', alignItems: 'center' },
   backButton: { width: 43, height: 43, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E1E6EB' },
-  topbarTitle: { flex: 1, marginHorizontal: 12, color: '#1F446A', fontSize: 16, fontWeight: '800', textAlign: 'center' },
-  hero: { padding: 23, borderRadius: 26, backgroundColor: '#183653' },
-  heroIcon: { width: 55, height: 55, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
-  eyebrow: { marginTop: 19, color: '#D2DEE8', fontSize: 10, fontWeight: '800', letterSpacing: 1.2 },
-  title: { marginTop: 7, color: '#FFFFFF', fontSize: 29, lineHeight: 35, fontWeight: '800', letterSpacing: -0.8 },
-  subtitle: { maxWidth: 550, marginTop: 8, color: '#DCE5ED', fontSize: 13, lineHeight: 20 },
-  locationBadge: { alignSelf: 'flex-start', marginTop: 18, paddingHorizontal: 11, paddingVertical: 8, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FFFFFF' },
-  locationText: { color: '#224D78', fontSize: 12, fontWeight: '800' },
-  searchBox: { minHeight: 55, marginTop: 13, paddingHorizontal: 16, borderRadius: 17, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DDE5EC' },
+  topbarCenter: { flex: 1, minHeight: 46, marginHorizontal: 10, paddingHorizontal: 11, borderRadius: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E1E6EB' },
+  topbarIcon: { width: 31, height: 31, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  topbarCopy: { flex: 1, minWidth: 0, marginLeft: 9 },
+  topbarTitle: { color: '#1F446A', fontSize: 14, fontWeight: '900' },
+  topbarSubtitle: { marginTop: 2, color: '#687786', fontSize: 10, fontWeight: '700' },
+  topDivider: { height: 1, marginBottom: 13, backgroundColor: '#E6EBEF' },
+  searchBox: { minHeight: 52, marginTop: 0, paddingHorizontal: 15, borderRadius: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DDE5EC' },
   searchInput: { flex: 1, marginHorizontal: 10, paddingVertical: 15, color: '#253F59', fontSize: 14 },
-  sectionHeader: { marginTop: 27, marginBottom: 14, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
-  sectionTitle: { color: '#1F446A', fontSize: 22, fontWeight: '800' },
+  sectionHeader: { marginTop: 20, marginBottom: 10, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
+  sectionTitle: { color: '#1F446A', fontSize: 21, fontWeight: '900' },
   sectionSubtitle: { marginTop: 4, color: '#687786', fontSize: 12 },
-  counter: { minWidth: 35, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 11, backgroundColor: '#EAF1F7' },
-  counterText: { color: '#224D78', fontSize: 12, fontWeight: '800', textAlign: 'center' },
-  row: { gap: 11 },
-  card: { minHeight: 190, marginBottom: 11, padding: 15, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderLeftWidth: 4, borderColor: '#E1E6EB' },
-  cardPressed: { opacity: 0.82, transform: [{ scale: 0.985 }] },
-  icon: { width: 47, height: 47, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
-  cardTitle: { minHeight: 40, marginTop: 13, color: '#243F59', fontSize: 15, lineHeight: 19, fontWeight: '800' },
-  cardDescription: { flex: 1, marginTop: 4, color: '#71808C', fontSize: 11, lineHeight: 16 },
-  cardFooter: { marginTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  countBadge: { flexShrink: 1, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#EDF3F7' },
+  listDivider: { height: 1, marginBottom: 9, backgroundColor: '#E6EBEF' },
+  card: { minHeight: 78, marginBottom: 8, padding: 11, borderRadius: 17, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E1E6EB' },
+  cardPressed: { opacity: 0.82, transform: [{ scale: 0.99 }] },
+  icon: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  cardCopy: { flex: 1, minWidth: 0, marginLeft: 12 },
+  cardTitle: { color: '#243F59', fontSize: 15, lineHeight: 19, fontWeight: '900' },
+  cardDescription: { marginTop: 4, color: '#71808C', fontSize: 11, lineHeight: 16 },
+  cardAction: { marginLeft: 8, alignItems: 'flex-end', gap: 7 },
+  countBadge: { minWidth: 33, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#EDF3F7' },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#2C689A' },
   countText: { color: '#285B87', fontSize: 10, fontWeight: '800' },
   empty: { paddingVertical: 60, alignItems: 'center' },

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { Alert, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { getProvider } from '../../data/providers';
@@ -12,6 +13,8 @@ export default function ProviderProfile() {
   const provider = getProvider(String(providerId || ''));
   const hasGallery = provider.images.length > 1;
   const coverWidth = Math.min(width, 720) - 32;
+  const [recommendationRating, setRecommendationRating] = useState(5);
+  const [recommended, setRecommended] = useState(false);
 
   const callProvider = () => Linking.openURL(`tel:${provider.phone}`);
   const openWhatsApp = () =>
@@ -21,10 +24,19 @@ export default function ProviderProfile() {
       )}`,
     );
 
+  const submitRating = () => {
+    Alert.alert(
+      'Valoración enviada',
+      `Gracias. Registramos ${recommendationRating} estrellas para ${provider.name}.`,
+      [{ text: 'Aceptar', style: 'cancel' }],
+    );
+  };
+
   const recommendProvider = () => {
+    setRecommended(true);
     Alert.alert(
       'Recomendación registrada',
-      `Gracias. ${provider.name} quedó marcado para revisión y puede aparecer en Destacados.`,
+      `Gracias. ${provider.name} quedó recomendado para revisión municipal.`,
       [
         { text: 'Ver destacados', onPress: () => router.push('/featured') },
         { text: 'Aceptar', style: 'cancel' },
@@ -82,6 +94,23 @@ export default function ProviderProfile() {
           )}
         </View>
 
+        {hasGallery && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.thumbnails}
+          >
+            {provider.images.map((image, index) => (
+              <Image
+                key={`${image}-${index}`}
+                source={{ uri: image }}
+                style={styles.thumbnail}
+                contentFit="cover"
+              />
+            ))}
+          </ScrollView>
+        )}
+
         <View style={styles.actions}>
           <Pressable onPress={callProvider} style={styles.outline}>
             <Ionicons name="call-outline" size={19} color="#224D78" />
@@ -93,16 +122,54 @@ export default function ProviderProfile() {
           </Pressable>
         </View>
 
-        <Pressable onPress={recommendProvider} style={styles.recommend}>
-          <Ionicons name="star-outline" size={18} color="#8B6421" />
-          <View style={styles.recommendText}>
-            <Text style={styles.recommendTitle}>Recomendar prestador</Text>
-            <Text style={styles.recommendDescription}>
-              Si te hizo un buen trabajo, puede aparecer en Destacados.
-            </Text>
+        <View style={styles.feedbackRow}>
+          <View style={styles.ratingCard}>
+            <View style={styles.feedbackHeader}>
+              <Ionicons name="star-outline" size={18} color="#8B6421" />
+              <Text style={styles.feedbackTitle}>Valorar servicio</Text>
+            </View>
+            <View style={styles.recommendStars}>
+              {Array.from({ length: 5 }, (_, index) => {
+                const value = index + 1;
+                return (
+                  <Pressable
+                    key={value}
+                    onPress={() => setRecommendationRating(value)}
+                    hitSlop={8}
+                  >
+                    <Ionicons
+                      name={value <= recommendationRating ? 'star' : 'star-outline'}
+                      size={18}
+                      color="#D89222"
+                    />
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Pressable onPress={submitRating} style={styles.ratingButton}>
+              <Text style={styles.ratingButtonText}>Enviar valoración</Text>
+            </Pressable>
           </View>
-          <Ionicons name="chevron-forward" size={17} color="#99A4AF" />
-        </Pressable>
+
+          <Pressable
+            onPress={recommendProvider}
+            style={[styles.likeCard, recommended && styles.likeCardActive]}
+          >
+            <View style={[styles.likeIcon, recommended && styles.likeIconActive]}>
+              <Ionicons
+                name={recommended ? 'thumbs-up' : 'thumbs-up-outline'}
+                size={21}
+                color={recommended ? '#FFFFFF' : '#224D78'}
+              />
+            </View>
+            <Text style={[styles.likeTitle, recommended && styles.likeTitleActive]}>
+              {recommended ? 'Recomendado' : 'Recomendar'}
+            </Text>
+            <Text style={[styles.likeDescription, recommended && styles.likeDescriptionActive]}>
+              {recommended ? 'Gracias por tu apoyo.' : 'Apoyar para Destacados.'}
+            </Text>
+          </Pressable>
+        </View>
 
         <Section title="Acerca del servicio">
           <Text style={styles.body}>{provider.description}</Text>
@@ -163,7 +230,7 @@ const styles = StyleSheet.create({
   content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, paddingBottom: 40 },
   bar: { height: 64, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   iconBtn: { width: 43, height: 43, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E1E6EB' },
-  barTitle: { fontSize: 16, fontWeight: '800', color: '#1F446A' },
+  barTitle: { fontSize: 16, fontWeight: '700', color: '#1F446A' },
   cover: { height: 238, borderRadius: 24, overflow: 'hidden', backgroundColor: '#DDE5EC' },
   gallery: { flex: 1 },
   coverImage: { height: 238 },
@@ -177,15 +244,28 @@ const styles = StyleSheet.create({
   light: { color: '#EAF1F7', fontSize: 11 },
   galleryBadge: { position: 'absolute', top: 12, right: 12, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#FFFFFF' },
   galleryBadgeText: { color: '#224D78', fontSize: 11, fontWeight: '800' },
+  thumbnails: { gap: 8, paddingTop: 10 },
+  thumbnail: { width: 54, height: 45, borderRadius: 12, backgroundColor: '#DDE5EC' },
   actions: { flexDirection: 'row', gap: 10, marginTop: 12 },
   outline: { flex: 1, height: 52, borderRadius: 16, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DDE5EC' },
   outlineText: { color: '#224D78', fontWeight: '800' },
   primary: { flex: 1, height: 52, borderRadius: 16, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: '#224D78' },
   primaryText: { color: '#FFFFFF', fontWeight: '800' },
-  recommend: { minHeight: 66, marginTop: 12, padding: 13, borderRadius: 18, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E1E6EB' },
-  recommendText: { flex: 1 },
-  recommendTitle: { color: '#1F446A', fontSize: 13, fontWeight: '800' },
-  recommendDescription: { marginTop: 3, color: '#687786', fontSize: 11, lineHeight: 15 },
+  feedbackRow: { marginTop: 12, flexDirection: 'row', gap: 10, alignItems: 'stretch' },
+  ratingCard: { flex: 1.35, minHeight: 122, padding: 13, borderRadius: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E1E6EB' },
+  feedbackHeader: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  feedbackTitle: { color: '#1F446A', fontSize: 14, lineHeight: 18, fontWeight: '700' },
+  recommendStars: { marginTop: 12, flexDirection: 'row', alignItems: 'center', gap: 3 },
+  ratingButton: { minHeight: 34, marginTop: 13, paddingHorizontal: 10, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EAF1F7' },
+  ratingButtonText: { color: '#224D78', fontSize: 11, lineHeight: 14, fontWeight: '700' },
+  likeCard: { flex: 1, minHeight: 112, padding: 12, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E1E6EB' },
+  likeCardActive: { backgroundColor: '#EAF1F7', borderColor: '#B8CADB' },
+  likeIcon: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EAF1F7' },
+  likeIconActive: { backgroundColor: '#224D78' },
+  likeTitle: { marginTop: 8, color: '#1F446A', fontSize: 12, fontWeight: '700', textAlign: 'center' },
+  likeTitleActive: { color: '#224D78' },
+  likeDescription: { marginTop: 3, color: '#687786', fontSize: 10, lineHeight: 13, textAlign: 'center' },
+  likeDescriptionActive: { color: '#536678' },
   section: { marginTop: 13, padding: 18, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E1E6EB' },
   sectionTitle: { fontSize: 16, fontWeight: '800', color: '#243F59', marginBottom: 10 },
   body: { fontSize: 13, lineHeight: 20, color: '#687786' },
