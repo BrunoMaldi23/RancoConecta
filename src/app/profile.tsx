@@ -70,7 +70,7 @@ export default function Profile() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F3ECDD' },
+  safeArea: { flex: 1, backgroundColor: '#EAF3F0' },
   content: { width: '100%', maxWidth: 520, alignSelf: 'center', padding: 16 },
   topbar: {
     height: 64,
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
   barTitle: { color: '#2F7353', fontSize: 16, fontWeight: '800' },
   card: {
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
   avatar: {
     width: 64,
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1D5F4A',
   },
   name: { marginTop: 14, color: '#2F7353', fontSize: 22, fontWeight: '800' },
-  email: { marginTop: 5, color: '#7A827A', fontSize: 13, fontWeight: '600' },
+  email: { marginTop: 5, color: '#6E7D75', fontSize: 13, fontWeight: '600' },
   role: {
     marginTop: 12,
     paddingHorizontal: 10,
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     overflow: 'hidden',
     color: '#1D5F4A',
-    backgroundColor: '#E6EFE6',
+    backgroundColor: '#E4EFE9',
     fontSize: 11,
     fontWeight: '800',
   },
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#F8E4E0',
+    backgroundColor: '#FBE9E2',
   },
-  secondaryButtonText: { color: '#A33C35', fontSize: 13, fontWeight: '800' },
+  secondaryButtonText: { color: '#BF6842', fontSize: 13, fontWeight: '800' },
 });

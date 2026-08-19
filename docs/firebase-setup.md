@@ -33,6 +33,28 @@ Si el puerto `8081` esta ocupado:
 .\node_modules\.bin\expo.cmd start --web --port 8083
 ```
 
+## Trabajar en desarrollo con emuladores
+
+En desarrollo la app se conecta a los emuladores locales cuando `.env`
+tiene `EXPO_PUBLIC_FIREBASE_EMULATOR=true` (puertos auth `9099`, firestore
+`8080`, functions `5001`). Si los emuladores no están corriendo, Firestore
+no responde y la home muestra "No se pudieron cargar los rubros".
+
+Levantar y sembrar:
+
+```bash
+npm.cmd run emulators
+npm.cmd run seed:emulator
+npm.cmd run web
+```
+
+`seed:emulator` crea el usuario admin en el emulador de auth y siembra las
+categorías base. Para volver a Firebase real, pon
+`EXPO_PUBLIC_FIREBASE_EMULATOR=false` en `.env`.
+
+> El retorno de Webpay es local solo se puede probar si Transbank puede
+> alcanzar la URL pública de `webpayReturn` (no responde a `127.0.0.1`).
+
 Sembrar/asegurar datos base en Firebase (opcional):
 
 ```bash

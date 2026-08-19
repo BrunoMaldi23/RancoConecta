@@ -203,7 +203,7 @@ export default function CategoryScreen() {
             <Pressable onPress={() => router.replace('/home')} style={styles.backButton}><Ionicons name="home-outline" size={21} color="#1D5F4A" /></Pressable>
           </View>
           <View style={styles.empty}>
-            <Ionicons name="grid-outline" size={40} color="#9B9A90" />
+            <Ionicons name="grid-outline" size={40} color="#9AA59F" />
             <Text style={styles.emptyTitle}>Categoría no encontrada</Text>
             <Text style={styles.emptyText}>Es posible que haya sido eliminada.</Text>
           </View>
@@ -237,9 +237,9 @@ export default function CategoryScreen() {
             <View style={styles.topDivider} />
 
             <View style={styles.searchBox}>
-              <Ionicons name="search-outline" size={20} color="#7A827A" />
-              <TextInput value={search} onChangeText={setSearch} placeholder="Buscar dentro de esta categoría" placeholderTextColor="#8A9288" style={styles.searchInput} />
-              {!!search && <Pressable onPress={() => setSearch('')}><Ionicons name="close-circle" size={20} color="#8A9288" /></Pressable>}
+              <Ionicons name="search-outline" size={20} color="#6E7D75" />
+              <TextInput value={search} onChangeText={setSearch} placeholder="Buscar dentro de esta categoría" placeholderTextColor="#8A9690" style={styles.searchInput} />
+              {!!search && <Pressable onPress={() => setSearch('')}><Ionicons name="close-circle" size={20} color="#8A9690" /></Pressable>}
             </View>
 
             <View style={styles.sectionHeader}><View><Text style={styles.sectionTitle}>Elige un servicio</Text><Text style={styles.sectionSubtitle}>{items.length} subcategorías disponibles</Text></View></View>
@@ -261,7 +261,7 @@ export default function CategoryScreen() {
               </View>
               <View style={styles.cardAction}>
                 <View style={styles.countBadge}><View style={[styles.dot, { backgroundColor: tone.color }]} /><Text style={styles.countText}>{item.count}</Text></View>
-                <Ionicons name="chevron-forward" size={18} color="#9B9A90" />
+                <Ionicons name="chevron-forward" size={18} color="#9AA59F" />
               </View>
             </Pressable>
           );
@@ -270,7 +270,7 @@ export default function CategoryScreen() {
           providersStatus === 'loading' ? (
             <View style={styles.empty}><Text style={styles.emptyText}>Cargando servicios…</Text></View>
           ) : (
-            <View style={styles.empty}><Ionicons name="search-outline" size={40} color="#9B9A90" /><Text style={styles.emptyTitle}>No encontramos ese servicio</Text><Text style={styles.emptyText}>Por ahora no hay prestadores publicados en este rubro para tu localidad.</Text></View>
+            <View style={styles.empty}><Ionicons name="search-outline" size={40} color="#9AA59F" /><Text style={styles.emptyTitle}>No encontramos ese servicio</Text><Text style={styles.emptyText}>Por ahora no hay prestadores publicados en este rubro para tu localidad.</Text></View>
           )
         }
       />
@@ -279,33 +279,33 @@ export default function CategoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F3ECDD' },
+  safeArea: { flex: 1, backgroundColor: '#EAF3F0' },
   content: { width: '100%', maxWidth: 720, alignSelf: 'center', paddingHorizontal: 16, paddingBottom: 40 },
   topbar: { minHeight: 72, flexDirection: 'row', alignItems: 'center' },
-  backButton: { width: 43, height: 43, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
-  topbarCenter: { flex: 1, minHeight: 46, marginHorizontal: 10, paddingHorizontal: 11, borderRadius: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
+  backButton: { width: 43, height: 43, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D5E0DA' },
+  topbarCenter: { flex: 1, minHeight: 46, marginHorizontal: 10, paddingHorizontal: 11, borderRadius: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D5E0DA' },
   topbarIcon: { width: 31, height: 31, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   topbarCopy: { flex: 1, minWidth: 0, marginLeft: 9 },
   topbarTitle: { color: '#2F7353', fontSize: 14, fontWeight: '900' },
-  topbarSubtitle: { marginTop: 2, color: '#7A827A', fontSize: 10, fontWeight: '700' },
-  topDivider: { height: 1, marginBottom: 13, backgroundColor: '#E6EBEF' },
-  searchBox: { minHeight: 52, marginTop: 0, paddingHorizontal: 15, borderRadius: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
-  searchInput: { flex: 1, marginHorizontal: 10, paddingVertical: 15, color: '#253F59', fontSize: 14 },
+  topbarSubtitle: { marginTop: 2, color: '#6E7D75', fontSize: 10, fontWeight: '700' },
+  topDivider: { height: 1, marginBottom: 13, backgroundColor: '#DDE7E2' },
+  searchBox: { minHeight: 52, marginTop: 0, paddingHorizontal: 15, borderRadius: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D5E0DA' },
+  searchInput: { flex: 1, marginHorizontal: 10, paddingVertical: 15, color: '#34443D', fontSize: 14 },
   sectionHeader: { marginTop: 20, marginBottom: 10, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
   sectionTitle: { color: '#2F7353', fontSize: 21, fontWeight: '900' },
-  sectionSubtitle: { marginTop: 4, color: '#7A827A', fontSize: 12 },
-  listDivider: { height: 1, marginBottom: 9, backgroundColor: '#E6EBEF' },
-  card: { minHeight: 78, marginBottom: 8, padding: 11, borderRadius: 17, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
+  sectionSubtitle: { marginTop: 4, color: '#6E7D75', fontSize: 12 },
+  listDivider: { height: 1, marginBottom: 9, backgroundColor: '#DDE7E2' },
+  card: { minHeight: 78, marginBottom: 8, padding: 11, borderRadius: 17, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D5E0DA' },
   cardPressed: { opacity: 0.82, transform: [{ scale: 0.99 }] },
   icon: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   cardCopy: { flex: 1, minWidth: 0, marginLeft: 12 },
   cardTitle: { color: '#34443D', fontSize: 15, lineHeight: 19, fontWeight: '900' },
-  cardDescription: { marginTop: 4, color: '#71808C', fontSize: 11, lineHeight: 16 },
+  cardDescription: { marginTop: 4, color: '#718078', fontSize: 11, lineHeight: 16 },
   cardAction: { marginLeft: 8, alignItems: 'flex-end', gap: 7 },
-  countBadge: { minWidth: 33, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#EDF3F7' },
+  countBadge: { minWidth: 33, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, backgroundColor: '#E4EFE9' },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#2F7353' },
   countText: { color: '#2F7353', fontSize: 10, fontWeight: '800' },
   empty: { paddingVertical: 60, alignItems: 'center' },
   emptyTitle: { marginTop: 14, color: '#34443D', fontSize: 16, fontWeight: '700' },
-  emptyText: { marginTop: 5, color: '#7A8793', fontSize: 12 },
+  emptyText: { marginTop: 5, color: '#74827B', fontSize: 12 },
 });

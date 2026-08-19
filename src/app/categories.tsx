@@ -112,12 +112,12 @@ export default function CategoriesScreen() {
                 value={search}
                 onChangeText={setSearch}
                 placeholder="Buscar rubro: hogar, agua, energia..."
-                placeholderTextColor="#8A9288"
+                placeholderTextColor="#8A9690"
                 style={styles.searchInput}
               />
               {!!search && (
                 <Pressable onPress={() => setSearch("")}>
-                  <Ionicons name="close-circle" size={20} color="#8A9288" />
+                  <Ionicons name="close-circle" size={20} color="#9AA59F" />
                 </Pressable>
               )}
             </View>
@@ -155,7 +155,7 @@ export default function CategoriesScreen() {
               <View style={styles.countBadge}>
                 <Text style={styles.countText}>{count}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color="#9B9A90" />
+              <Ionicons name="chevron-forward" size={18} color="#9AA59F" />
             </Pressable>
           );
         }}
@@ -166,12 +166,12 @@ export default function CategoriesScreen() {
             </View>
           ) : catalogCategories.length === 0 ? (
             <View style={styles.empty}>
-              <Ionicons name="grid-outline" size={38} color="#9B9A90" />
+              <Ionicons name="grid-outline" size={38} color="#9AA59F" />
               <Text style={styles.emptyTitle}>Aún no hay categorías</Text>
             </View>
           ) : (
             <View style={styles.empty}>
-              <Ionicons name="search-outline" size={38} color="#9B9A90" />
+              <Ionicons name="search-outline" size={38} color="#9AA59F" />
               <Text style={styles.emptyTitle}>Sin resultados</Text>
               <Text style={styles.emptyText}>Prueba con otra palabra.</Text>
             </View>
@@ -183,7 +183,7 @@ export default function CategoriesScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#F3ECDD" },
+  safeArea: { flex: 1, backgroundColor: "#EAF3F0" },
   content: {
     width: "100%",
     maxWidth: 720,
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#DED8CB",
+    borderColor: "#D5E0DA",
   },
   topbarTitleWrap: { flex: 1, marginHorizontal: 12, alignItems: "center" },
   topbarTitle: {
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   },
   topbarSubtitle: {
     marginTop: 2,
-    color: "#7A827A",
+    color: "#6E7D75",
     fontSize: 11,
     fontWeight: "700",
   },
@@ -239,13 +239,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#DED8CB",
+    borderColor: "#D5E0DA",
   },
   searchInput: {
     flex: 1,
     marginHorizontal: 10,
     paddingVertical: 15,
-    color: "#253F59",
+    color: "#34443D",
     fontSize: 14,
   },
   categoryRow: {
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#DED8CB",
+    borderColor: "#D5E0DA",
   },
   rowPressed: { opacity: 0.82, transform: [{ scale: 0.99 }] },
   iconBox: {
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   },
   categoryDescription: {
     marginTop: 4,
-    color: "#71808C",
+    color: "#718078",
     fontSize: 11,
     lineHeight: 15,
   },
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E6EFE6",
+    backgroundColor: "#E4EFE9",
   },
   countText: {
     color: "#1D5F4A",
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     marginTop: 5,
-    color: "#7A8793",
+    color: "#74827B",
     fontSize: 12,
   },
 });

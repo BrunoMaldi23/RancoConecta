@@ -41,6 +41,8 @@
     "build": "expo export -p web",
     "reset-project": "node ./scripts/reset-project.js",
     "seed:firebase": "node ./scripts/seed-firebase.mjs",
+    "seed:emulator": "node ./scripts/seed-firebase.mjs --emulator",
+    "emulators": "firebase emulators:start",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",

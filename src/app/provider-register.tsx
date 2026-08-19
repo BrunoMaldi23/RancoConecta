@@ -259,21 +259,21 @@ export default function ProviderRegister() {
               value={businessNameValue}
               onChangeText={setBusinessName}
               placeholder="Nombre del negocio o prestador"
-              placeholderTextColor="#8A9288"
+              placeholderTextColor="#8A9690"
               style={styles.input}
             />
             <TextInput
               value={serviceNameValue}
               onChangeText={setServiceName}
               placeholder="Servicio principal"
-              placeholderTextColor="#8A9288"
+              placeholderTextColor="#8A9690"
               style={styles.input}
             />
             <TextInput
               value={phoneValue}
               onChangeText={setPhone}
               placeholder="Telefono o WhatsApp"
-              placeholderTextColor="#8A9288"
+              placeholderTextColor="#8A9690"
               keyboardType="phone-pad"
               style={styles.input}
             />
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#BF6842',
   },
   statusCopy: { flex: 1, marginLeft: 11 },
-  statusStripTitle: { color: '#8A5A37', fontSize: 13, fontWeight: '700' },
+  statusStripTitle: { color: '#BF6842', fontSize: 13, fontWeight: '700' },
   statusStripText: { marginTop: 4, color: '#6D5A3B', fontSize: 11, lineHeight: 16 },
   summaryGrid: {
     marginTop: 10,
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#D5E0DA',
   },
-  summaryLabel: { marginTop: 8, color: '#7A827A', fontSize: 10, fontWeight: '700' },
+  summaryLabel: { marginTop: 8, color: '#6E7D75', fontSize: 10, fontWeight: '700' },
   summaryValue: { marginTop: 3, color: '#2F7353', fontSize: 13, fontWeight: '700' },
   form: {
     marginTop: 13,
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
     borderColor: '#D5E0DA',
   },
   sectionTitle: { color: '#2F7353', fontSize: 18, fontWeight: '700' },
-  sectionText: { marginTop: 5, color: '#7A827A', fontSize: 12, lineHeight: 18 },
+  sectionText: { marginTop: 5, color: '#6E7D75', fontSize: 12, lineHeight: 18 },
   input: {
     minHeight: 54,
     marginTop: 12,
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
   fieldLabel: {
     marginTop: 15,
     marginBottom: 7,
-    color: '#68736B',
+    color: '#6E7D75',
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.3,
@@ -502,9 +502,9 @@ const styles = StyleSheet.create({
     borderColor: '#D5E0DA',
   },
   optionChipActive: { backgroundColor: '#1D5F4A', borderColor: '#1D5F4A' },
-  optionChipText: { color: '#68736B', fontSize: 11, fontWeight: '600' },
+  optionChipText: { color: '#6E7D75', fontSize: 11, fontWeight: '600' },
   optionChipTextActive: { color: '#FFFFFF' },
-  hintText: { marginTop: 6, color: '#8A9288', fontSize: 12 },
+  hintText: { marginTop: 6, color: '#8A9690', fontSize: 12 },
   imageGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   imageTile: {
     width: 82,
@@ -523,7 +523,7 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(24,54,83,0.72)',
+    backgroundColor: 'rgba(29,60,47,0.72)',
   },
   imageButton: {
     minHeight: 44,
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
   statusTitle: { marginTop: 14, color: '#2F7353', fontSize: 20, fontWeight: '700' },
   statusText: {
     marginTop: 8,
-    color: '#68736B',
+    color: '#6E7D75',
     fontSize: 13,
     lineHeight: 20,
     textAlign: 'center',

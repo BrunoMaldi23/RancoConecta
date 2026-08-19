@@ -121,7 +121,7 @@ export default function RequestService() {
             value={address}
             onChangeText={setAddress}
             placeholder="Ej: Futrono, sector urbano"
-            placeholderTextColor="#8A9288"
+            placeholderTextColor="#8A9690"
             style={styles.input}
           />
         </View>
@@ -140,7 +140,7 @@ export default function RequestService() {
             value={detail}
             onChangeText={setDetail}
             placeholder="Describe el trabajo con el mayor detalle posible"
-            placeholderTextColor="#8A9288"
+            placeholderTextColor="#8A9690"
             multiline
             style={[styles.input, styles.area]}
           />
@@ -230,36 +230,36 @@ function Header({ title }: { title: string }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F3ECDD' },
+  safe: { flex: 1, backgroundColor: '#EAF3F0' },
   content: { width: '100%', maxWidth: 680, alignSelf: 'center', padding: 16, paddingBottom: 40 },
   bar: { height: 64, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  back: { width: 43, height: 43, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
+  back: { width: 43, height: 43, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D5E0DA' },
   barTitle: { fontSize: 16, fontWeight: '700', color: '#2F7353' },
-  summaryLine: { paddingTop: 4, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: '#DED8CB' },
-  eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8, color: '#B97012', textTransform: 'uppercase' },
+  summaryLine: { paddingTop: 4, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: '#D5E0DA' },
+  eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8, color: '#BF6842', textTransform: 'uppercase' },
   title: { fontSize: 22, lineHeight: 27, fontWeight: '700', color: '#2F7353', marginTop: 5 },
-  light: { fontSize: 13, color: '#7A827A', marginTop: 4 },
-  stepCard: { marginTop: 13, padding: 14, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
+  light: { fontSize: 13, color: '#6E7D75', marginTop: 4 },
+  stepCard: { marginTop: 13, padding: 14, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D5E0DA' },
   stepHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   stepBadge: { width: 30, height: 30, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1D5F4A' },
-  optionalBadge: { backgroundColor: '#E6EFE6' },
+  optionalBadge: { backgroundColor: '#E4EFE9' },
   stepBadgeText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
   stepCopy: { flex: 1, minWidth: 0, marginLeft: 10 },
   stepTitle: { color: '#2F7353', fontSize: 15, fontWeight: '700' },
-  stepHint: { marginTop: 3, color: '#7A827A', fontSize: 11, lineHeight: 15 },
-  input: { minHeight: 52, paddingHorizontal: 14, borderRadius: 15, backgroundColor: '#FDFEFE', borderWidth: 1, borderColor: '#DED8CB', fontSize: 14, color: '#34443D' },
+  stepHint: { marginTop: 3, color: '#6E7D75', fontSize: 11, lineHeight: 15 },
+  input: { minHeight: 52, paddingHorizontal: 14, borderRadius: 15, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D5E0DA', fontSize: 14, color: '#34443D' },
   area: { height: 116, paddingTop: 14, textAlignVertical: 'top' },
   dateOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  dateChip: { minHeight: 38, paddingHorizontal: 12, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3ECDD', borderWidth: 1, borderColor: '#DED8CB' },
+  dateChip: { minHeight: 38, paddingHorizontal: 12, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F4F8F6', borderWidth: 1, borderColor: '#D5E0DA' },
   dateChipActive: { backgroundColor: '#1D5F4A', borderColor: '#1D5F4A' },
-  dateChipText: { color: '#42586C', fontSize: 12, fontWeight: '700' },
+  dateChipText: { color: '#34443D', fontSize: 12, fontWeight: '700' },
   dateChipTextActive: { color: '#FFFFFF' },
-  attach: { height: 48, borderRadius: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#E6EFE6' },
+  attach: { height: 48, borderRadius: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#E4EFE9' },
   attachText: { fontSize: 13, fontWeight: '700', color: '#1D5F4A' },
   photoGrid: { marginTop: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  photoItem: { width: 78, height: 78, borderRadius: 16, overflow: 'hidden', backgroundColor: '#DED8CB' },
+  photoItem: { width: 78, height: 78, borderRadius: 16, overflow: 'hidden', backgroundColor: '#D5E0DA' },
   photo: { width: '100%', height: '100%' },
-  removePhoto: { position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(24,54,83,0.82)' },
+  removePhoto: { position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(29,60,47,0.82)' },
   send: { height: 56, marginTop: 16, borderRadius: 17, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, backgroundColor: '#BF6842' },
   sendText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
 });

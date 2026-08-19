@@ -54,7 +54,7 @@ export default function ProviderProfile() {
             </Pressable>
           </View>
           <View style={styles.notFound}>
-            <Ionicons name="alert-circle-outline" size={42} color="#9B9A90" />
+            <Ionicons name="alert-circle-outline" size={42} color="#9AA59F" />
             <Text style={styles.notFoundTitle}>Prestador no encontrado</Text>
             <Text style={styles.notFoundText}>
               El perfil consultado ya no está disponible en el directorio.
@@ -148,7 +148,7 @@ export default function ProviderProfile() {
               <Text numberOfLines={1} style={styles.service}>
                 {provider.service}
               </Text>
-              {provider.verified && <Ionicons name="checkmark-circle" size={18} color="#CDE6F7" />}
+              {provider.verified && <Ionicons name="checkmark-circle" size={18} color="#CDE9D8" />}
             </View>
             <View style={styles.rating}>
               <Ionicons name="star" size={16} color="#BF6842" />
@@ -198,7 +198,7 @@ export default function ProviderProfile() {
         <View style={styles.feedbackRow}>
           <View style={styles.ratingCard}>
             <View style={styles.feedbackHeader}>
-              <Ionicons name="star-outline" size={18} color="#8A5A37" />
+              <Ionicons name="star-outline" size={18} color="#BF6842" />
               <Text style={styles.feedbackTitle}>Valorar servicio</Text>
             </View>
             <View style={styles.recommendStars}>
@@ -286,54 +286,54 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F3ECDD' },
+  safe: { flex: 1, backgroundColor: '#EAF3F0' },
   content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, paddingBottom: 40 },
   bar: { height: 64, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  iconBtn: { width: 43, height: 43, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
+  iconBtn: { width: 43, height: 43, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D5E0DA' },
   barTitle: { fontSize: 16, fontWeight: '700', color: '#2F7353' },
-  cover: { height: 238, borderRadius: 24, overflow: 'hidden', backgroundColor: '#DED8CB' },
+  cover: { height: 238, borderRadius: 24, overflow: 'hidden', backgroundColor: '#D5E0DA' },
   gallery: { flex: 1 },
   coverImage: { height: 238 },
-  coverShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(24,54,83,0.38)' },
+  coverShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(29,60,47,0.42)' },
   coverPlaceholder: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   coverCopy: { position: 'absolute', left: 18, right: 18, bottom: 18 },
   name: { color: '#FFFFFF', fontSize: 25, lineHeight: 30, fontWeight: '800' },
   serviceRow: { marginTop: 5, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  service: { color: '#EEF5FA', fontSize: 13, fontWeight: '700' },
+  service: { color: '#F2F7F4', fontSize: 13, fontWeight: '700' },
   rating: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 11 },
   ratingText: { color: '#FFFFFF', fontWeight: '800' },
-  light: { color: '#E6EFE6', fontSize: 11 },
+  light: { color: '#E4EFE9', fontSize: 11 },
   galleryBadge: { position: 'absolute', top: 12, right: 12, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#FFFFFF' },
   galleryBadgeText: { color: '#1D5F4A', fontSize: 11, fontWeight: '800' },
   thumbnails: { gap: 8, paddingTop: 10 },
-  thumbnail: { width: 54, height: 45, borderRadius: 12, backgroundColor: '#DED8CB' },
+  thumbnail: { width: 54, height: 45, borderRadius: 12, backgroundColor: '#D5E0DA' },
   actions: { flexDirection: 'row', gap: 10, marginTop: 12 },
-  outline: { flex: 1, height: 52, borderRadius: 16, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
+  outline: { flex: 1, height: 52, borderRadius: 16, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D5E0DA' },
   outlineText: { color: '#1D5F4A', fontWeight: '800' },
   primary: { flex: 1, height: 52, borderRadius: 16, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1D5F4A' },
   primaryText: { color: '#FFFFFF', fontWeight: '800' },
-  favoriteButton: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
+  favoriteButton: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D5E0DA' },
   feedbackRow: { marginTop: 12 },
-  ratingCard: { minHeight: 122, padding: 13, borderRadius: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
+  ratingCard: { minHeight: 122, padding: 13, borderRadius: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D5E0DA' },
   feedbackHeader: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   feedbackTitle: { color: '#2F7353', fontSize: 14, lineHeight: 18, fontWeight: '700' },
   recommendStars: { marginTop: 12, flexDirection: 'row', alignItems: 'center', gap: 3 },
-  ratingButton: { minHeight: 34, marginTop: 13, paddingHorizontal: 10, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: '#E6EFE6' },
+  ratingButton: { minHeight: 34, marginTop: 13, paddingHorizontal: 10, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: '#E4EFE9' },
   ratingButtonText: { color: '#1D5F4A', fontSize: 11, lineHeight: 14, fontWeight: '700' },
-  section: { marginTop: 13, padding: 18, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
+  section: { marginTop: 13, padding: 18, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D5E0DA' },
   sectionTitle: { fontSize: 16, fontWeight: '800', color: '#34443D', marginBottom: 10 },
-  body: { fontSize: 13, lineHeight: 20, color: '#7A827A' },
+  body: { fontSize: 13, lineHeight: 20, color: '#6E7D75' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 11, flexDirection: 'row', gap: 5, backgroundColor: '#E2ECE1' },
+  chip: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 11, flexDirection: 'row', gap: 5, backgroundColor: '#E4EFE9' },
   chipText: { fontSize: 11, fontWeight: '700', color: '#1D5F4A' },
   available: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#2F7353' },
   availableText: { fontSize: 12, fontWeight: '700', color: '#2F7353' },
   request: { height: 58, marginTop: 14, borderRadius: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, backgroundColor: '#BF6842' },
   requestText: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
-  notFound: { marginTop: 40, padding: 26, borderRadius: 24, alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
+  notFound: { marginTop: 40, padding: 26, borderRadius: 24, alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D5E0DA' },
   notFoundTitle: { marginTop: 13, color: '#34443D', fontSize: 17, fontWeight: '800' },
-  notFoundText: { marginTop: 6, color: '#7A827A', fontSize: 13, lineHeight: 19, textAlign: 'center' },
+  notFoundText: { marginTop: 6, color: '#6E7D75', fontSize: 13, lineHeight: 19, textAlign: 'center' },
   notFoundButton: { minHeight: 46, marginTop: 16, paddingHorizontal: 16, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1D5F4A' },
   notFoundButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
 });

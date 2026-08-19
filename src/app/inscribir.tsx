@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   Platform,
   Pressable,
   SafeAreaView,
@@ -48,6 +49,27 @@ const BENEFITS = [
   'Gestión de tu ficha',
 ];
 
+const PAY_METHODS = [
+  {
+    id: 'debito',
+    label: 'Tarjeta de débito',
+    detail: 'RedCompra · Visa débito · Mastercard débito',
+    icon: 'card-outline' as const,
+  },
+  {
+    id: 'credito',
+    label: 'Tarjetas de crédito',
+    detail: 'Visa · Mastercard · American Express',
+    icon: 'wallet-outline' as const,
+  },
+  {
+    id: 'bancoestado',
+    label: 'BancoEstado',
+    detail: 'Cuenta RUT · Cuenta corriente · Banca en línea',
+    icon: 'business-outline' as const,
+  },
+];
+
 export default function InscribeScreen() {
   const params = useLocalSearchParams<{
     mode?: string;
@@ -61,6 +83,8 @@ export default function InscribeScreen() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [payModalVisible, setPayModalVisible] = useState(false);
+  const [selectedMethodId, setSelectedMethodId] = useState<string>(PAY_METHODS[0].id);
   const [membership, setMembership] = useState<Membership | null | undefined>(undefined);
 
   const completedRef = useRef(false);
@@ -185,6 +209,17 @@ export default function InscribeScreen() {
     } finally {
       setPaying(false);
     }
+  };
+
+  const openPayModal = () => {
+    setPayModalVisible(true);
+  };
+
+  const selectedMethod = PAY_METHODS.find((method) => method.id === selectedMethodId) ?? PAY_METHODS[0];
+
+  const confirmPayment = () => {
+    setPayModalVisible(false);
+    pay();
   };
 
   if (!authReady) {
@@ -369,7 +404,7 @@ export default function InscribeScreen() {
                   </View>
                 ) : (
                   <Pressable
-                    onPress={pay}
+                    onPress={openPayModal}
                     disabled={paying}
                     style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed, paying && styles.disabled]}
                   >
@@ -389,6 +424,84 @@ export default function InscribeScreen() {
           </>
         )}
       </ScrollView>
+
+      <Modal
+        visible={payModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPayModalVisible(false)}
+      >
+        <View style={styles.centeredModal}>
+          <Pressable style={styles.modalOverlay} onPress={() => setPayModalVisible(false)} />
+
+          <View style={styles.paySheet}>
+            <View style={styles.sheetHandle} />
+
+            <View style={styles.sheetHeader}>
+              <View style={styles.sheetHeaderCopy}>
+                <Text style={styles.sheetTitle}>Elige cómo pagar</Text>
+                <Text style={styles.sheetSubtitle}>
+                  Selecciona el método y luego se abrirá la pasarela segura para completar el pago.
+                </Text>
+              </View>
+              <Pressable onPress={() => setPayModalVisible(false)} style={styles.closeButton}>
+                <Ionicons name="close" size={21} color="#34443D" />
+              </Pressable>
+            </View>
+
+            <View style={styles.payMethodList}>
+              {PAY_METHODS.map((method) => {
+                const active = method.id === selectedMethodId;
+
+                return (
+                  <Pressable
+                    key={method.id}
+                    onPress={() => setSelectedMethodId(method.id)}
+                    style={({ pressed }) => [
+                      styles.payMethodOption,
+                      active && styles.payMethodOptionActive,
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <View style={[styles.optionIcon, active && styles.optionIconActive]}>
+                      <Ionicons name={method.icon} size={21} color={active ? '#FFFFFF' : '#1D5F4A'} />
+                    </View>
+                    <View style={styles.optionInformation}>
+                      <Text style={[styles.optionName, active && styles.optionNameActive]}>
+                        {method.label}
+                      </Text>
+                      <Text style={styles.optionArea}>{method.detail}</Text>
+                    </View>
+                    {active ? (
+                      <Ionicons name="checkmark-circle" size={22} color="#1D5F4A" />
+                    ) : (
+                      <Ionicons name="chevron-forward" size={17} color="#9AA59F" />
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <Pressable
+              onPress={confirmPayment}
+              disabled={paying}
+              style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed, paying && styles.disabled]}
+            >
+              <Text style={styles.primaryButtonText}>
+                {paying ? 'Iniciando pago…' : `Pagar con ${selectedMethod.label}`}
+              </Text>
+              <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+            </Pressable>
+
+            <View style={styles.securityRow}>
+              <Ionicons name="shield-checkmark-outline" size={14} color="#718078" />
+              <Text style={styles.securityText}>
+                El pago se procesa con Webpay de Transbank · {MEMBERSHIP_PRICE_LABEL}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -645,4 +758,106 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   activeSection: { alignItems: 'center', paddingTop: 20 },
+  centeredModal: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(13, 27, 22, 0.45)',
+  },
+  modalOverlay: {
+    ...StyleSheet.absoluteFill,
+  },
+  paySheet: {
+    padding: 18,
+    paddingTop: 12,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#10241C',
+    shadowOffset: { width: 0, height: 9 },
+    shadowOpacity: 0.22,
+    shadowRadius: 22,
+    elevation: 8,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    marginBottom: 12,
+    borderRadius: 2,
+    alignSelf: 'center',
+    backgroundColor: '#D5E0DA',
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  sheetHeaderCopy: { flex: 1 },
+  sheetTitle: {
+    color: '#245F47',
+    fontFamily: APP_FONT_MEDIUM,
+    fontSize: 19,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  sheetSubtitle: {
+    marginTop: 4,
+    color: '#718078',
+    fontFamily: APP_FONT,
+    fontSize: 11.5,
+    lineHeight: 17,
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F1F5F3',
+  },
+  payMethodList: {
+    marginTop: 16,
+    overflow: 'hidden',
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#DCE6E1',
+  },
+  payMethodOption: {
+    minHeight: 62,
+    paddingHorizontal: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8EFEB',
+  },
+  payMethodOptionActive: {
+    backgroundColor: '#F2FAF6',
+  },
+  optionIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EDF4F0',
+  },
+  optionIconActive: {
+    backgroundColor: '#2F7353',
+  },
+  optionInformation: { flex: 1 },
+  optionName: {
+    color: '#34443D',
+    fontFamily: APP_FONT_MEDIUM,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  optionNameActive: { color: '#1D5F4A' },
+  optionArea: {
+    marginTop: 2,
+    color: '#718078',
+    fontFamily: APP_FONT,
+    fontSize: 11,
+  },
 });

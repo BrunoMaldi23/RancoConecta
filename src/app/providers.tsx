@@ -115,17 +115,17 @@ export default function ProvidersScreen() {
             </View>
 
             <View style={styles.search}>
-              <Ionicons name="search-outline" size={20} color="#7A827A" />
+              <Ionicons name="search-outline" size={20} color="#6E7D75" />
               <TextInput
                 value={search}
                 onChangeText={setSearch}
                 placeholder="Buscar prestador"
-                placeholderTextColor="#8A9288"
+                placeholderTextColor="#8A9690"
                 style={styles.input}
               />
               {!!search && (
                 <Pressable onPress={() => setSearch('')}>
-                  <Ionicons name="close-circle" size={20} color="#8A9288" />
+                  <Ionicons name="close-circle" size={20} color="#8A9690" />
                 </Pressable>
               )}
             </View>
@@ -184,14 +184,14 @@ export default function ProvidersScreen() {
                 <Text style={[styles.status, !item.available && styles.busy]}>
                   {item.available ? 'Disponible' : 'Consultar'}
                 </Text>
-                <Ionicons name="chevron-forward" size={18} color="#9B9A90" />
+                <Ionicons name="chevron-forward" size={18} color="#9AA59F" />
               </View>
             </Pressable>
           );
         }}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="search-outline" size={38} color="#9B9A90" />
+            <Ionicons name="search-outline" size={38} color="#9AA59F" />
             <Text style={styles.emptyTitle}>Sin prestadores</Text>
             <Text style={styles.emptyText}>Prueba con otra busqueda.</Text>
           </View>
@@ -202,7 +202,7 @@ export default function ProvidersScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F3ECDD' },
+  safe: { flex: 1, backgroundColor: '#EAF3F0' },
   content: {
     width: '100%',
     maxWidth: 720,
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
   topbarCenter: {
     flex: 1,
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
   topbarIcon: {
     width: 31,
@@ -239,17 +239,17 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E6EFE6',
+    backgroundColor: '#E4EFE9',
   },
   topbarCopy: { flex: 1, minWidth: 0, marginLeft: 9 },
   topbarTitle: { color: '#2F7353', fontSize: 14, fontWeight: '700' },
   topbarSubtitle: {
     marginTop: 2,
-    color: '#7A827A',
+    color: '#6E7D75',
     fontSize: 10,
     fontWeight: '600',
   },
-  topDivider: { height: 1, marginBottom: 13, backgroundColor: '#E6EBEF' },
+  topDivider: { height: 1, marginBottom: 13, backgroundColor: '#DDE7E2' },
   pressed: { opacity: 0.72 },
   summary: {
     minHeight: 80,
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
   summaryIcon: {
     width: 46,
@@ -267,11 +267,11 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E6EFE6',
+    backgroundColor: '#E4EFE9',
   },
   summaryCopy: { flex: 1, minWidth: 0, marginLeft: 12 },
   eyebrow: {
-    color: '#B97012',
+    color: '#BF6842',
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.8,
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
   },
   summaryText: {
     marginTop: 3,
-    color: '#68736B',
+    color: '#718078',
     fontSize: 12,
     lineHeight: 17,
   },
@@ -299,9 +299,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
-  input: { flex: 1, marginHorizontal: 10, color: '#253F59', fontSize: 14 },
+  input: { flex: 1, marginHorizontal: 10, color: '#34443D', fontSize: 14 },
   sectionHeader: {
     marginTop: 20,
     marginBottom: 10,
@@ -316,13 +316,13 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 10,
     overflow: 'hidden',
-    backgroundColor: '#E6EFE6',
+    backgroundColor: '#E4EFE9',
     color: '#1D5F4A',
     fontSize: 11,
     fontWeight: '700',
     textAlign: 'center',
   },
-  listDivider: { height: 1, marginBottom: 9, backgroundColor: '#E6EBEF' },
+  listDivider: { height: 1, marginBottom: 9, backgroundColor: '#DDE7E2' },
   card: {
     minHeight: 94,
     marginBottom: 9,
@@ -332,33 +332,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
   thumbnail: {
     width: 58,
     height: 58,
     borderRadius: 16,
-    backgroundColor: '#E2ECE1',
+    backgroundColor: '#E4EFE9',
   },
   info: { flex: 1, minWidth: 0, marginLeft: 12 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   name: { flexShrink: 1, color: '#34443D', fontSize: 15, fontWeight: '700' },
-  muted: { color: '#7A827A', fontSize: 11, marginTop: 3 },
+  muted: { color: '#6E7D75', fontSize: 11, marginTop: 3 },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 7 },
   stars: { flexDirection: 'row', alignItems: 'center', gap: 1 },
-  rating: { fontSize: 11, fontWeight: '700', color: '#4A594F' },
+  rating: { fontSize: 11, fontWeight: '700', color: '#34443D' },
   cardRight: { marginLeft: 8, alignItems: 'flex-end', gap: 9 },
   status: {
     paddingHorizontal: 8,
     paddingVertical: 5,
     borderRadius: 9,
     overflow: 'hidden',
-    backgroundColor: '#EDF3F7',
+    backgroundColor: '#E4EFE9',
     color: '#2F7353',
     fontSize: 9,
     fontWeight: '700',
   },
-  busy: { backgroundColor: '#F6EFE3', color: '#8A5A37' },
+  busy: { backgroundColor: '#FBE9E2', color: '#BF6842' },
   empty: { paddingVertical: 52, alignItems: 'center' },
   emptyTitle: {
     marginTop: 13,
@@ -366,5 +366,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
   },
-  emptyText: { marginTop: 5, color: '#7A8793', fontSize: 12 },
+  emptyText: { marginTop: 5, color: '#74827B', fontSize: 12 },
 });

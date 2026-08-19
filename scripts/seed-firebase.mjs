@@ -2,8 +2,21 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { deleteDoc, doc, getDoc, getFirestore, setDoc } from 'firebase/firestore';
+import {
+  connectAuthEmulator,
+  createUserWithEmailAndPassword,
+  getAuth,
+  signInWithEmailAndPassword,
+  signOut,
+} from 'firebase/auth';
+import {
+  connectFirestoreEmulator,
+  deleteDoc,
+  doc,
+  getDoc,
+  getFirestore,
+  setDoc,
+} from 'firebase/firestore';
 
 const envPath = resolve(process.cwd(), '.env');
 
@@ -37,6 +50,11 @@ const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL || 'admin@lagoranco.cl';
 const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || 'ranco-admin';
 const ADMIN_UID = process.env.SEED_ADMIN_UID || '';
 const timestamp = new Date().toISOString();
+
+// Con --emulator el seed apunta a los emuladores locales (auth 9099 /
+// firestore 8080) en vez de al proyecto real. Útil para probar la app en
+// desarrollo sin tocar Firebase.
+const USE_EMULATOR = process.argv.includes('--emulator');
 
 // Ids de los prestadores demo sembrados originalmente. Se borran para
 // dejar el directorio con datos reales únicamente.
@@ -222,8 +240,60 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+if (USE_EMULATOR) {
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  console.log('Apuntando a los emuladores locales (auth 9099, firestore 8080).');
+
+  // El emulador de Firestore aplica firestore.rules y la creación del perfil
+  // admin desde el cliente no la permite. Para el seed local relajamos las
+  // reglas solo dentro del emulador.
+  const emulatorRules = `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} { allow read, write: if true; }
+  }
+}`;
+
+  const securityRulesUrl =
+    `http://127.0.0.1:8080/emulator/v1/projects/` +
+    `${process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID}:securityRules`;
+
+  const rulesResponse = await fetch(securityRulesUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      rules: {
+        files: [{ content: emulatorRules }],
+      },
+    }),
+  });
+
+  if (!rulesResponse.ok) {
+    throw new Error(
+      `No se pudieron relajar las reglas del emulador (${rulesResponse.status}). ` +
+        'Asegúrate de que el emulador de Firestore esté corriendo en el puerto 8080.',
+    );
+  }
+
+  console.log('Reglas del emulador relajadas (solo desarrollo).');
+}
+
 console.log(`Signing in as ${ADMIN_EMAIL}...`);
-const credential = await signInWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASSWORD);
+
+let credential;
+
+if (USE_EMULATOR) {
+  try {
+    credential = await createUserWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASSWORD);
+  } catch {
+    // En el emulador el usuario puede ya existir de una corrida anterior.
+    credential = await signInWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASSWORD);
+  }
+} else {
+  credential = await signInWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASSWORD);
+}
+
 console.log(`Signed in. UID: ${credential.user.uid}`);
 
 const adminUid = ADMIN_UID || credential.user.uid;

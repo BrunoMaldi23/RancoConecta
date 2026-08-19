@@ -30,7 +30,7 @@ export default function HistoryScreen() {
           </View>
         ) : requests.length === 0 ? (
           <View style={styles.empty}>
-            <Ionicons name="time-outline" size={45} color="#9B9A90" />
+            <Ionicons name="time-outline" size={45} color="#9AA59F" />
             <Text style={styles.emptyTitle}>Sin historial todavía</Text>
             <Text style={styles.emptyText}>Tus solicitudes aparecerán aquí cuando contactes un prestador.</Text>
           </View>
@@ -92,26 +92,26 @@ function formatDate(value: string) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F3ECDD' },
+  safeArea: { flex: 1, backgroundColor: '#EAF3F0' },
   content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, paddingBottom: 40 },
   bar: { height: 64, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  backButton: { width: 43, height: 43, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
+  backButton: { width: 43, height: 43, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D5E0DA' },
   barTitle: { color: '#2F7353', fontSize: 16, fontWeight: '800' },
   title: { marginTop: 10, color: '#2F7353', fontSize: 27, fontWeight: '800' },
-  subtitle: { marginTop: 6, marginBottom: 20, color: '#7A827A', fontSize: 13, lineHeight: 19 },
-  card: { minHeight: 132, marginBottom: 11, padding: 14, borderRadius: 20, flexDirection: 'row', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
+  subtitle: { marginTop: 6, marginBottom: 20, color: '#6E7D75', fontSize: 13, lineHeight: 19 },
+  card: { minHeight: 132, marginBottom: 11, padding: 14, borderRadius: 20, flexDirection: 'row', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D5E0DA' },
   cardPressed: { opacity: 0.84, transform: [{ scale: 0.99 }] },
-  avatar: { width: 49, height: 49, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: '#E2ECE1' },
+  avatar: { width: 49, height: 49, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: '#E4EFE9' },
   info: { flex: 1, marginLeft: 12 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   name: { flex: 1, color: '#34443D', fontSize: 14, fontWeight: '800' },
-  date: { color: '#8A9288', fontSize: 10, fontWeight: '700' },
-  service: { marginTop: 3, color: '#7A827A', fontSize: 11, fontWeight: '600' },
+  date: { color: '#8A9690', fontSize: 10, fontWeight: '700' },
+  service: { marginTop: 3, color: '#6E7D75', fontSize: 11, fontWeight: '600' },
   note: { marginTop: 6, color: '#34443D', fontSize: 12, lineHeight: 17 },
   actions: { marginTop: 11, flexDirection: 'row', gap: 8 },
-  actionButton: { minHeight: 34, paddingHorizontal: 10, borderRadius: 11, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#E6EFE6' },
+  actionButton: { minHeight: 34, paddingHorizontal: 10, borderRadius: 11, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#E4EFE9' },
   actionText: { color: '#1D5F4A', fontSize: 11, fontWeight: '800' },
   empty: { paddingTop: 90, alignItems: 'center' },
   emptyTitle: { marginTop: 12, fontSize: 15, fontWeight: '800', color: '#34443D' },
-  emptyText: { marginTop: 6, maxWidth: 280, textAlign: 'center', fontSize: 12, lineHeight: 18, color: '#71808C' },
+  emptyText: { marginTop: 6, maxWidth: 280, textAlign: 'center', fontSize: 12, lineHeight: 18, color: '#718078' },
 });

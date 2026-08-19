@@ -54,9 +54,9 @@ const COLOR_OPTIONS: { color: string; background: string }[] = [
   { color: '#1D5F4A', background: '#E2ECE1' },
   { color: '#2F7353', background: '#E6EFE6' },
   { color: '#2F7353', background: '#E6EFE6' },
-  { color: '#8A5A37', background: '#EFE6D6' },
+  { color: '#BF6842', background: '#EFE6D6' },
   { color: '#B94738', background: '#F9E4E0' },
-  { color: '#8A5A37', background: '#EFE6D6' },
+  { color: '#BF6842', background: '#EFE6D6' },
   { color: '#9A5C63', background: '#F1E1E2' },
   { color: '#6E6356', background: '#E8E1D4' },
   { color: '#536171', background: '#E9EEE5' },
@@ -480,12 +480,12 @@ export default function AdminScreen() {
             </View>
           ) : requestsStatus === 'error' ? (
             <View style={styles.emptyAdminBox}>
-              <Ionicons name="alert-circle-outline" size={24} color="#8A9288" />
+              <Ionicons name="alert-circle-outline" size={24} color="#9AA59F" />
               <Text style={styles.emptyAdminText}>No se pudieron cargar las solicitudes.</Text>
             </View>
           ) : requests.length === 0 ? (
             <View style={styles.emptyAdminBox}>
-              <Ionicons name="chatbubble-ellipses-outline" size={24} color="#8A9288" />
+              <Ionicons name="chatbubble-ellipses-outline" size={24} color="#9AA59F" />
               <Text style={styles.emptyAdminText}>Aún no hay solicitudes enviadas.</Text>
             </View>
           ) : (
@@ -533,14 +533,14 @@ export default function AdminScreen() {
             value={newUserName}
             onChangeText={setNewUserName}
             placeholder="Nombre de contacto"
-            placeholderTextColor="#8A9288"
+            placeholderTextColor="#8A9690"
             style={styles.input}
           />
           <TextInput
             value={newUserEmail}
             onChangeText={setNewUserEmail}
             placeholder="Correo de acceso"
-            placeholderTextColor="#8A9288"
+            placeholderTextColor="#8A9690"
             autoCapitalize="none"
             keyboardType="email-address"
             style={styles.input}
@@ -549,7 +549,7 @@ export default function AdminScreen() {
             value={newUserPassword}
             onChangeText={setNewUserPassword}
             placeholder="Clave temporal"
-            placeholderTextColor="#8A9288"
+            placeholderTextColor="#8A9690"
             autoCapitalize="none"
             style={styles.input}
           />
@@ -557,21 +557,21 @@ export default function AdminScreen() {
             value={newUserBusiness}
             onChangeText={setNewUserBusiness}
             placeholder="Nombre del negocio"
-            placeholderTextColor="#8A9288"
+            placeholderTextColor="#8A9690"
             style={styles.input}
           />
           <TextInput
             value={newUserService}
             onChangeText={setNewUserService}
             placeholder="Servicio principal"
-            placeholderTextColor="#8A9288"
+            placeholderTextColor="#8A9690"
             style={styles.input}
           />
           <TextInput
             value={newUserPhone}
             onChangeText={setNewUserPhone}
             placeholder="Teléfono o WhatsApp"
-            placeholderTextColor="#8A9288"
+            placeholderTextColor="#8A9690"
             keyboardType="phone-pad"
             style={styles.input}
           />
@@ -615,7 +615,7 @@ export default function AdminScreen() {
             </View>
           ) : categories.length === 0 ? (
             <View style={styles.emptyAdminBox}>
-              <Ionicons name="grid-outline" size={24} color="#8A9288" />
+              <Ionicons name="grid-outline" size={24} color="#9AA59F" />
               <Text style={styles.emptyAdminText}>Aún no hay categorías. Crea la primera abajo.</Text>
             </View>
           ) : (
@@ -651,14 +651,14 @@ export default function AdminScreen() {
             value={categoryName}
             onChangeText={setCategoryName}
             placeholder="Nombre de la categoría (ej: Hogar y reparaciones)"
-            placeholderTextColor="#8A9288"
+            placeholderTextColor="#8A9690"
             style={styles.input}
           />
           <TextInput
             value={categoryDescription}
             onChangeText={setCategoryDescription}
             placeholder="Descripción breve"
-            placeholderTextColor="#8A9288"
+            placeholderTextColor="#8A9690"
             style={styles.input}
           />
 
@@ -712,7 +712,7 @@ export default function AdminScreen() {
                   value={subcategory.name}
                   onChangeText={(value) => updateDraftSubcategory(subcategory.id, 'name', value)}
                   placeholder="Nombre del servicio"
-                  placeholderTextColor="#8A9288"
+                  placeholderTextColor="#8A9690"
                   style={styles.editInput}
                 />
                 <TextInput
@@ -721,7 +721,7 @@ export default function AdminScreen() {
                     updateDraftSubcategory(subcategory.id, 'description', value)
                   }
                   placeholder="Descripción corta"
-                  placeholderTextColor="#8A9288"
+                  placeholderTextColor="#8A9690"
                   style={styles.editInput}
                 />
               </View>
@@ -776,21 +776,21 @@ export default function AdminScreen() {
             value={businessName}
             onChangeText={setBusinessName}
             placeholder="Nombre del negocio o prestador"
-            placeholderTextColor="#8A9288"
+            placeholderTextColor="#8A9690"
             style={styles.input}
           />
           <TextInput
             value={serviceName}
             onChangeText={setServiceName}
             placeholder="Servicio principal"
-            placeholderTextColor="#8A9288"
+            placeholderTextColor="#8A9690"
             style={styles.input}
           />
           <TextInput
             value={phone}
             onChangeText={setPhone}
             placeholder="Teléfono o WhatsApp"
-            placeholderTextColor="#8A9288"
+            placeholderTextColor="#8A9690"
             keyboardType="phone-pad"
             style={styles.input}
           />
@@ -866,7 +866,7 @@ export default function AdminScreen() {
             </View>
           ) : providers.length === 0 ? (
             <View style={styles.emptyAdminBox}>
-              <Ionicons name="storefront-outline" size={24} color="#8A9288" />
+              <Ionicons name="storefront-outline" size={24} color="#9AA59F" />
               <Text style={styles.emptyAdminText}>Aún no hay perfiles en el directorio.</Text>
             </View>
           ) : (
@@ -969,21 +969,21 @@ export default function AdminScreen() {
                       value={editName}
                       onChangeText={setEditName}
                       placeholder="Nombre del prestador"
-                      placeholderTextColor="#6A7B8A"
+                      placeholderTextColor="#8A9690"
                       style={styles.editInput}
                     />
                     <TextInput
                       value={editService}
                       onChangeText={setEditService}
                       placeholder="Servicio"
-                      placeholderTextColor="#6A7B8A"
+                      placeholderTextColor="#8A9690"
                       style={styles.editInput}
                     />
                     <TextInput
                       value={editPhone}
                       onChangeText={setEditPhone}
                       placeholder="Teléfono"
-                      placeholderTextColor="#6A7B8A"
+                      placeholderTextColor="#8A9690"
                       keyboardType="phone-pad"
                       style={styles.editInput}
                     />
@@ -1050,7 +1050,7 @@ function userStatusLabel(status: ManagedUser['status']) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F3ECDD' },
+  safeArea: { flex: 1, backgroundColor: '#EAF3F0' },
   content: {
     width: '100%',
     maxWidth: 920,
@@ -1072,7 +1072,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
   topbarTitle: { color: '#2F7353', fontSize: 16, fontWeight: '800' },
   input: {
@@ -1083,7 +1083,7 @@ const styles = StyleSheet.create({
     color: '#34443D',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
     fontSize: 14,
   },
   hero: {
@@ -1106,7 +1106,7 @@ const styles = StyleSheet.create({
   },
   heroText: {
     marginTop: 7,
-    color: '#EEF5EE',
+    color: '#E9F2EC',
     fontSize: 13,
     lineHeight: 20,
   },
@@ -1124,7 +1124,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
   statValue: {
     marginTop: 8,
@@ -1132,19 +1132,19 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
   },
-  statLabel: { color: '#7A827A', fontSize: 11, fontWeight: '700' },
+  statLabel: { color: '#6E7D75', fontSize: 11, fontWeight: '700' },
   section: {
     marginTop: 13,
     padding: 16,
     borderRadius: 20,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
   sectionTitle: { color: '#2F7353', fontSize: 18, fontWeight: '800' },
   sectionText: {
     marginTop: 5,
-    color: '#7A827A',
+    color: '#6E7D75',
     fontSize: 12,
     lineHeight: 18,
   },
@@ -1156,7 +1156,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#E6EFE6',
+    backgroundColor: '#E4EFE9',
   },
   secondaryButtonText: { color: '#1D5F4A', fontSize: 13, fontWeight: '800' },
   providerCard: {
@@ -1165,11 +1165,11 @@ const styles = StyleSheet.create({
     padding: 13,
     borderRadius: 18,
     flexDirection: 'row',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F7FAF9',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
-  providerCover: { width: 56, height: 56, borderRadius: 14, backgroundColor: '#DED8CB' },
+  providerCover: { width: 56, height: 56, borderRadius: 14, backgroundColor: '#D5E0DA' },
   providerInfo: { flex: 1, marginLeft: 11 },
   providerHeader: {
     flexDirection: 'row',
@@ -1188,19 +1188,19 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     overflow: 'hidden',
     color: '#2F7353',
-    backgroundColor: '#EDF3F7',
+    backgroundColor: '#E4EFE9',
     fontSize: 9,
     fontWeight: '800',
   },
-  pendingBadge: { color: '#8A5A37', backgroundColor: '#F6EFE3' },
-  pausedBadge: { color: '#8A4B45', backgroundColor: '#F8E8E5' },
+  pendingBadge: { color: '#BF6842', backgroundColor: '#FBE9E2' },
+  pausedBadge: { color: '#BF6842', backgroundColor: '#FBE9E2' },
   providerService: {
     marginTop: 4,
-    color: '#7A827A',
+    color: '#6E7D75',
     fontSize: 12,
     fontWeight: '600',
   },
-  providerMeta: { marginTop: 4, color: '#8A9288', fontSize: 11 },
+  providerMeta: { marginTop: 4, color: '#8A9690', fontSize: 11 },
   actions: { marginTop: 10, flexDirection: 'row', gap: 8 },
   simpleRow: {
     minHeight: 70,
@@ -1210,13 +1210,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F7FAF9',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
   simpleInfo: { flex: 1 },
   simpleTitle: { color: '#34443D', fontSize: 13, fontWeight: '800' },
-  simpleText: { marginTop: 3, color: '#7A827A', fontSize: 11, lineHeight: 15 },
+  simpleText: { marginTop: 3, color: '#6E7D75', fontSize: 11, lineHeight: 15 },
   userRow: {
     minHeight: 78,
     marginTop: 10,
@@ -1225,9 +1225,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F7FAF9',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
   userIcon: {
     width: 40,
@@ -1235,7 +1235,7 @@ const styles = StyleSheet.create({
     borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E6EFE6',
+    backgroundColor: '#E4EFE9',
   },
   userInfo: { flex: 1 },
   userStatus: {
@@ -1243,8 +1243,8 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 9,
     overflow: 'hidden',
-    color: '#8A5A37',
-    backgroundColor: '#F6EFE3',
+    color: '#BF6842',
+    backgroundColor: '#FBE9E2',
     fontSize: 9,
     fontWeight: '800',
   },
@@ -1255,18 +1255,18 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F7FAF9',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
-  emptyAdminText: { marginTop: 7, color: '#7A827A', fontSize: 12, fontWeight: '700' },
+  emptyAdminText: { marginTop: 7, color: '#6E7D75', fontSize: 12, fontWeight: '700' },
   requestRow: {
     marginTop: 10,
     padding: 12,
     borderRadius: 16,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F7FAF9',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
   requestInfo: { minWidth: 0 },
   requestDetail: { marginTop: 6, color: '#34443D', fontSize: 12, lineHeight: 17 },
@@ -1279,10 +1279,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
   statusChipActive: { backgroundColor: '#1D5F4A', borderColor: '#1D5F4A' },
-  statusChipText: { color: '#68736B', fontSize: 10, fontWeight: '800' },
+  statusChipText: { color: '#6E7D75', fontSize: 10, fontWeight: '800' },
   statusChipTextActive: { color: '#FFFFFF' },
   actionButton: {
     minHeight: 34,
@@ -1292,19 +1292,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
   actionText: { color: '#1D5F4A', fontSize: 11, fontWeight: '800' },
   editPanel: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#DED8CB',
+    borderTopColor: '#D5E0DA',
   },
   fieldLabel: {
     marginTop: 13,
     marginBottom: 7,
-    color: '#68736B',
+    color: '#77867E',
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.3,
@@ -1317,12 +1317,12 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F1F4F6',
+    backgroundColor: '#F4F8F6',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
   optionChipActive: { backgroundColor: '#1D5F4A', borderColor: '#1D5F4A' },
-  optionChipText: { color: '#68736B', fontSize: 11, fontWeight: '700' },
+  optionChipText: { color: '#6E7D75', fontSize: 11, fontWeight: '700' },
   optionChipTextActive: { color: '#FFFFFF' },
   imageGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   imageTile: {
@@ -1330,7 +1330,7 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 13,
     overflow: 'hidden',
-    backgroundColor: '#DED8CB',
+    backgroundColor: '#D5E0DA',
   },
   imageTileImage: { width: '100%', height: '100%' },
   imageRemove: {
@@ -1342,7 +1342,7 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(24,54,83,0.72)',
+    backgroundColor: 'rgba(29,60,47,0.72)',
   },
   editActions: { marginTop: 10, flexDirection: 'row' },
   imageButton: {
@@ -1352,7 +1352,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
-    backgroundColor: '#E6EFE6',
+    backgroundColor: '#E4EFE9',
   },
   imageButtonText: { color: '#1D5F4A', fontSize: 12, fontWeight: '800' },
   categoryRow: {
@@ -1363,9 +1363,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F7FAF9',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
   categoryIconBox: {
     width: 40,
@@ -1376,12 +1376,12 @@ const styles = StyleSheet.create({
   },
   categoryInfo: { flex: 1, minWidth: 0 },
   categoryActions: { flexDirection: 'row', gap: 7 },
-  dangerText: { color: '#B3473D', fontSize: 11, fontWeight: '800' },
+  dangerText: { color: '#BF6842', fontSize: 11, fontWeight: '800' },
   formDivider: {
     height: 1,
     marginTop: 16,
     marginBottom: 4,
-    backgroundColor: '#E6EBEF',
+    backgroundColor: '#DDE7E2',
   },
   iconPicker: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   iconOption: {
@@ -1392,7 +1392,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
   colorOption: {
     width: 38,
@@ -1417,16 +1417,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: '#E6EFE6',
+    backgroundColor: '#E4EFE9',
   },
   smallAddText: { color: '#1D5F4A', fontSize: 11, fontWeight: '800' },
   subcategoryCard: {
     marginTop: 9,
     padding: 11,
     borderRadius: 15,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F7FAF9',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
   subcategoryInputs: { gap: 8 },
   subcategoryFooter: {
@@ -1442,9 +1442,9 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F8E8E5',
+    backgroundColor: '#FBE9E2',
   },
-  hintText: { marginTop: 9, color: '#8A9288', fontSize: 11 },
+  hintText: { marginTop: 9, color: '#8A9690', fontSize: 11 },
   editInput: {
     minHeight: 46,
     marginTop: 9,
@@ -1453,7 +1453,7 @@ const styles = StyleSheet.create({
     color: '#2F7353',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
     fontSize: 13,
     fontWeight: '500',
   },
@@ -1466,9 +1466,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DED8CB',
+    borderColor: '#D5E0DA',
   },
-  cancelButtonText: { color: '#68736B', fontSize: 12, fontWeight: '800' },
+  cancelButtonText: { color: '#6E7D75', fontSize: 12, fontWeight: '800' },
   saveButton: {
     flex: 1,
     minHeight: 44,
