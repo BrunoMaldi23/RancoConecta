@@ -29,6 +29,7 @@ export default function RootLayout() {
           <Stack.Screen name="contacts" />
           <Stack.Screen name="profile" />
           <Stack.Screen name="inscribir" />
+          <Stack.Screen name="set-password" />
           <Stack.Screen name="payment-result" />
           <Stack.Screen name="provider-register" />
           <Stack.Screen name="request-service" />

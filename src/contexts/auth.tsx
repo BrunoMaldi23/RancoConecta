@@ -21,6 +21,7 @@ export type ManagedUser = AuthUser & {
   serviceName?: string;
   phone?: string;
   favoriteIds?: string[];
+  mustChangePassword?: boolean;
 };
 
 type LoginPayload = {
@@ -49,7 +50,12 @@ type AuthContextValue = {
   profile: ManagedUser | null;
   managedUsers: ManagedUser[];
   authReady: boolean;
-  login: (payload: LoginPayload) => Promise<{ ok: true } | { ok: false; message: string }>;
+  login: (
+    payload: LoginPayload,
+  ) => Promise<
+    | { ok: true; mustChangePassword: boolean }
+    | { ok: false; message: string }
+  >;
   createCommerceUser: (
     payload: CreateCommerceUserPayload,
   ) => Promise<{ ok: true; user: ManagedUser } | { ok: false; message: string }>;
@@ -216,7 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           setUser(firebaseUser);
-          return { ok: true };
+          return { ok: true, mustChangePassword: firebaseUser.mustChangePassword === true };
         } catch (error) {
           return {
             ok: false,

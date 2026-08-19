@@ -94,6 +94,11 @@ export default function IndexScreen() {
       return;
     }
 
+    if (loginRole === 'commerce' && result.mustChangePassword) {
+      router.replace('/set-password');
+      return;
+    }
+
     router.replace(
       returnTo ||
         (loginRole === 'municipal_admin'

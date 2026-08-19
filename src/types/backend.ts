@@ -10,6 +10,7 @@ export type UserDocument = {
   serviceName?: string;
   phone?: string;
   favoriteIds?: string[];
+  mustChangePassword?: boolean;
   createdAt: string;
   updatedAt: string;
 };

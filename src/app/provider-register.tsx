@@ -90,6 +90,10 @@ export default function ProviderRegister() {
     return <Redirect href="/home" />;
   }
 
+  if (profile?.mustChangePassword) {
+    return <Redirect href="/set-password" />;
+  }
+
   if (membershipState === 'loading') {
     return (
       <SafeAreaView style={styles.safeArea}>

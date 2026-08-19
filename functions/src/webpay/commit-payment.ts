@@ -4,12 +4,20 @@ import {
 } from "firebase-admin/firestore";
 
 import {
+  getAuth,
+} from "firebase-admin/auth";
+
+import {
   MEMBERSHIP_CURRENCY,
 } from "../config/membership";
 
 import {
   buildActiveMembership,
 } from "../memberships/activate-membership";
+
+import {
+  provisionMemberAccount,
+} from "../accounts/provision-member-account";
 
 import {
   getWebpayTransaction,
@@ -188,6 +196,33 @@ export async function commitPayment(
   );
 
   await batch.commit();
+
+  // El comercio se inscribió con email-link, sin clave. Después del primer
+  // pago se le asigna una contraseña temporal y se le envía por correo.
+  // Si el usuario ya tiene contraseña (renovación), no se pisa.
+  try {
+    const authUser =
+      await getAuth().getUser(userId);
+
+    const hasPassword =
+      authUser.providerData.some(
+        (provider) =>
+          provider.providerId === "password",
+      );
+
+    if (!hasPassword) {
+      await provisionMemberAccount(
+        userId,
+        payment.email as string,
+        payment.name as string,
+      );
+    }
+  } catch (error) {
+    console.error(
+      "commitPayment provision:",
+      error,
+    );
+  }
 
   return {
     authorized:

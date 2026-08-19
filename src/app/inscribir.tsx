@@ -330,14 +330,14 @@ export default function InscribeScreen() {
                 style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed, sending && styles.disabled]}
               >
                 <Text style={styles.primaryButtonText}>
-                  {sending ? 'Enviando…' : 'Enviar enlace de inscripción'}
+                  {sending ? 'Enviando…' : 'Ir a pagar'}
                 </Text>
                 {!sending && <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />}
               </Pressable>
 
               <View style={styles.securityRow}>
                 <Ionicons name="shield-checkmark-outline" size={14} color="#718078" />
-                <Text style={styles.securityText}>Recibirás un enlace seguro en tu correo.</Text>
+                <Text style={styles.securityText}>Recibirás un enlace seguro en tu correo para confirmar tu cuenta.</Text>
               </View>
             </>
           )

@@ -1,5 +1,10 @@
 import { FirebaseError } from 'firebase/app';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  updatePassword,
+} from 'firebase/auth';
 import { collection, doc, getDoc, onSnapshot, query, setDoc, updateDoc } from 'firebase/firestore';
 
 import type { AuthUser, ManagedUser } from '../contexts/auth';
@@ -63,6 +68,7 @@ export function mapUserDocument(id: string, data: UserDocument): ManagedUser {
     serviceName: data.serviceName,
     phone: data.phone,
     favoriteIds: data.favoriteIds,
+    mustChangePassword: data.mustChangePassword === true,
   };
 }
 
@@ -150,4 +156,20 @@ export async function updateUserById(
 export async function signOutUser() {
   const { auth } = requireFirebase();
   await signOut(auth);
+}
+
+export async function changeOwnPassword(newPassword: string) {
+  const { auth, db } = requireFirebase();
+  const currentUser = auth.currentUser;
+
+  if (!currentUser) {
+    throw new Error('Debes iniciar sesión para cambiar tu contraseña.');
+  }
+
+  await updatePassword(currentUser, newPassword);
+
+  await updateDoc(doc(db, 'users', currentUser.uid), {
+    mustChangePassword: false,
+    updatedAt: now(),
+  });
 }
