@@ -15,7 +15,7 @@ export default function RootLayout() {
             headerShown: false,
             animation: 'fade',
             contentStyle: {
-              backgroundColor: '#F7F8F4',
+              backgroundColor: '#F3ECDD',
             },
           }}
         >
@@ -28,6 +28,8 @@ export default function RootLayout() {
           <Stack.Screen name="history" />
           <Stack.Screen name="contacts" />
           <Stack.Screen name="profile" />
+          <Stack.Screen name="inscribir" />
+          <Stack.Screen name="payment-result" />
           <Stack.Screen name="provider-register" />
           <Stack.Screen name="request-service" />
           <Stack.Screen name="category/[categoryId]" />

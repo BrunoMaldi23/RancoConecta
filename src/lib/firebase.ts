@@ -1,9 +1,11 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { connectAuthEmulator, getAuth } from 'firebase/auth';
+import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 import { isFirebaseConfigured } from './firebase-config';
+
+export { isFirebaseConfigured };
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -23,3 +25,18 @@ export const firebaseApp = isFirebaseConfigured
 export const firebaseAuth = firebaseApp ? getAuth(firebaseApp) : null;
 export const firestore = firebaseApp ? getFirestore(firebaseApp) : null;
 export const firebaseStorage = firebaseApp ? getStorage(firebaseApp) : null;
+
+// Conectar a emuladores locales SOLO en desarrollo y cuando la variable
+// EXPO_PUBLIC_FIREBASE_EMULATOR está explícitamente activada. En producción
+// (o sin la variable) la app usa siempre Firebase real.
+const enableEmulators =
+  __DEV__ &&
+  isFirebaseConfigured &&
+  process.env.EXPO_PUBLIC_FIREBASE_EMULATOR?.trim().toLowerCase() === 'true';
+
+if (enableEmulators && firebaseAuth && firestore) {
+  connectAuthEmulator(firebaseAuth, 'http://127.0.0.1:9099', {
+    disableWarnings: true,
+  });
+  connectFirestoreEmulator(firestore, '127.0.0.1', 8080);
+}

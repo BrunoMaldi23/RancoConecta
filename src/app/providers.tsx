@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
@@ -13,15 +12,21 @@ import {
 } from 'react-native';
 
 import { useAppData } from '../contexts/app-data';
+import { ProviderCover } from '../components/provider-cover';
+import { safeGoBack } from '../lib/navigation';
 
 export default function ProvidersScreen() {
   const params = useLocalSearchParams<{
     serviceName?: string;
     locationName?: string;
+    categoryId?: string;
     subcategoryId?: string;
   }>();
   const serviceName = String(params.serviceName || 'Prestadores');
   const locationName = String(params.locationName || 'Lago Ranco');
+  const categoryId = Array.isArray(params.categoryId)
+    ? params.categoryId[0]
+    : params.categoryId;
   const subcategoryId = Array.isArray(params.subcategoryId)
     ? params.subcategoryId[0]
     : params.subcategoryId;
@@ -31,19 +36,24 @@ export default function ProvidersScreen() {
   const data = useMemo(() => {
     const term = search.trim().toLowerCase();
     const publicProviders = providers.filter((item) => item.publicationStatus === 'Publicado');
-    const scopedProviders = subcategoryId
-      ? publicProviders.filter((item) => item.subcategoryId === subcategoryId)
+    const categoryProviders = categoryId
+      ? publicProviders.filter((item) => item.categoryId === categoryId)
       : publicProviders;
-    const source = scopedProviders.length > 0 ? scopedProviders : publicProviders;
+    const scopedProviders = subcategoryId
+      ? categoryProviders.filter((item) => item.subcategoryId === subcategoryId)
+      : categoryProviders;
+    const locatedProviders = scopedProviders.filter((item) =>
+      item.coverage.includes(locationName),
+    );
 
-    return source.filter((item) => {
+    return locatedProviders.filter((item) => {
       return (
         !term ||
         item.name.toLowerCase().includes(term) ||
         item.service.toLowerCase().includes(term)
       );
     });
-  }, [providers, search, subcategoryId]);
+  }, [providers, search, categoryId, subcategoryId, locationName]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -56,17 +66,17 @@ export default function ProvidersScreen() {
           <>
             <View style={styles.topbar}>
               <Pressable
-                onPress={() => router.back()}
+                onPress={() => safeGoBack('/home')}
                 style={({ pressed }) => [
                   styles.iconButton,
                   pressed && styles.pressed,
                 ]}
               >
-                <Ionicons name="arrow-back" size={23} color="#1F446A" />
+                <Ionicons name="arrow-back" size={23} color="#2F7353" />
               </Pressable>
               <View style={styles.topbarCenter}>
                 <View style={styles.topbarIcon}>
-                  <Ionicons name="people-outline" size={18} color="#224D78" />
+                  <Ionicons name="people-outline" size={18} color="#1D5F4A" />
                 </View>
                 <View style={styles.topbarCopy}>
                   <Text numberOfLines={1} style={styles.topbarTitle}>
@@ -84,14 +94,14 @@ export default function ProvidersScreen() {
                   pressed && styles.pressed,
                 ]}
               >
-                <Ionicons name="home-outline" size={21} color="#224D78" />
+                <Ionicons name="home-outline" size={21} color="#1D5F4A" />
               </Pressable>
             </View>
             <View style={styles.topDivider} />
 
             <View style={styles.summary}>
               <View style={styles.summaryIcon}>
-                <Ionicons name="location-outline" size={21} color="#224D78" />
+                <Ionicons name="location-outline" size={21} color="#1D5F4A" />
               </View>
               <View style={styles.summaryCopy}>
                 <Text style={styles.eyebrow}>Prestadores disponibles</Text>
@@ -105,17 +115,17 @@ export default function ProvidersScreen() {
             </View>
 
             <View style={styles.search}>
-              <Ionicons name="search-outline" size={20} color="#687786" />
+              <Ionicons name="search-outline" size={20} color="#7A827A" />
               <TextInput
                 value={search}
                 onChangeText={setSearch}
                 placeholder="Buscar prestador"
-                placeholderTextColor="#87929E"
+                placeholderTextColor="#8A9288"
                 style={styles.input}
               />
               {!!search && (
                 <Pressable onPress={() => setSearch('')}>
-                  <Ionicons name="close-circle" size={20} color="#87929E" />
+                  <Ionicons name="close-circle" size={20} color="#8A9288" />
                 </Pressable>
               )}
             </View>
@@ -140,14 +150,14 @@ export default function ProvidersScreen() {
               }
               style={({ pressed }) => [styles.card, pressed && styles.pressed]}
             >
-              <Image source={{ uri: item.images[0] }} style={styles.thumbnail} contentFit="cover" />
+              <ProviderCover uri={item.images[0]} style={styles.thumbnail} />
               <View style={styles.info}>
                 <View style={styles.nameRow}>
                   <Text numberOfLines={1} style={styles.name}>
                     {item.name}
                   </Text>
                   {item.verified && (
-                    <Ionicons name="checkmark-circle" size={16} color="#2C689A" />
+                    <Ionicons name="checkmark-circle" size={16} color="#2F7353" />
                   )}
                 </View>
                 <Text numberOfLines={1} style={styles.muted}>
@@ -160,7 +170,7 @@ export default function ProvidersScreen() {
                         key={`${item.id}-${index}`}
                         name={filled ? 'star' : 'star-outline'}
                         size={12}
-                        color="#D89222"
+                        color="#BF6842"
                       />
                     ))}
                   </View>
@@ -174,14 +184,14 @@ export default function ProvidersScreen() {
                 <Text style={[styles.status, !item.available && styles.busy]}>
                   {item.available ? 'Disponible' : 'Consultar'}
                 </Text>
-                <Ionicons name="chevron-forward" size={18} color="#99A4AF" />
+                <Ionicons name="chevron-forward" size={18} color="#9B9A90" />
               </View>
             </Pressable>
           );
         }}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons name="search-outline" size={38} color="#99A4AF" />
+            <Ionicons name="search-outline" size={38} color="#9B9A90" />
             <Text style={styles.emptyTitle}>Sin prestadores</Text>
             <Text style={styles.emptyText}>Prueba con otra busqueda.</Text>
           </View>
@@ -192,7 +202,7 @@ export default function ProvidersScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F7F8F4' },
+  safe: { flex: 1, backgroundColor: '#F3ECDD' },
   content: {
     width: '100%',
     maxWidth: 720,
@@ -209,7 +219,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E1E6EB',
+    borderColor: '#DED8CB',
   },
   topbarCenter: {
     flex: 1,
@@ -221,7 +231,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E1E6EB',
+    borderColor: '#DED8CB',
   },
   topbarIcon: {
     width: 31,
@@ -229,13 +239,13 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#EAF1F7',
+    backgroundColor: '#E6EFE6',
   },
   topbarCopy: { flex: 1, minWidth: 0, marginLeft: 9 },
-  topbarTitle: { color: '#1F446A', fontSize: 14, fontWeight: '700' },
+  topbarTitle: { color: '#2F7353', fontSize: 14, fontWeight: '700' },
   topbarSubtitle: {
     marginTop: 2,
-    color: '#687786',
+    color: '#7A827A',
     fontSize: 10,
     fontWeight: '600',
   },
@@ -249,7 +259,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E1E6EB',
+    borderColor: '#DED8CB',
   },
   summaryIcon: {
     width: 46,
@@ -257,7 +267,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#EAF1F7',
+    backgroundColor: '#E6EFE6',
   },
   summaryCopy: { flex: 1, minWidth: 0, marginLeft: 12 },
   eyebrow: {
@@ -269,14 +279,14 @@ const styles = StyleSheet.create({
   },
   summaryTitle: {
     marginTop: 3,
-    color: '#1F446A',
+    color: '#2F7353',
     fontSize: 20,
     lineHeight: 25,
     fontWeight: '700',
   },
   summaryText: {
     marginTop: 3,
-    color: '#536678',
+    color: '#68736B',
     fontSize: 12,
     lineHeight: 17,
   },
@@ -289,7 +299,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DDE5EC',
+    borderColor: '#DED8CB',
   },
   input: { flex: 1, marginHorizontal: 10, color: '#253F59', fontSize: 14 },
   sectionHeader: {
@@ -299,15 +309,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  section: { color: '#1F446A', fontSize: 21, fontWeight: '700' },
+  section: { color: '#2F7353', fontSize: 21, fontWeight: '700' },
   sectionCount: {
     minWidth: 32,
     paddingHorizontal: 9,
     paddingVertical: 5,
     borderRadius: 10,
     overflow: 'hidden',
-    backgroundColor: '#EAF1F7',
-    color: '#224D78',
+    backgroundColor: '#E6EFE6',
+    color: '#1D5F4A',
     fontSize: 11,
     fontWeight: '700',
     textAlign: 'center',
@@ -322,18 +332,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E1E6EB',
+    borderColor: '#DED8CB',
   },
   thumbnail: {
     width: 58,
     height: 58,
     borderRadius: 16,
-    backgroundColor: '#E8EEF4',
+    backgroundColor: '#E2ECE1',
   },
   info: { flex: 1, minWidth: 0, marginLeft: 12 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  name: { flexShrink: 1, color: '#243F59', fontSize: 15, fontWeight: '700' },
-  muted: { color: '#687786', fontSize: 11, marginTop: 3 },
+  name: { flexShrink: 1, color: '#34443D', fontSize: 15, fontWeight: '700' },
+  muted: { color: '#7A827A', fontSize: 11, marginTop: 3 },
   meta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 7 },
   stars: { flexDirection: 'row', alignItems: 'center', gap: 1 },
   rating: { fontSize: 11, fontWeight: '700', color: '#4A594F' },
@@ -344,15 +354,15 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     overflow: 'hidden',
     backgroundColor: '#EDF3F7',
-    color: '#285B87',
+    color: '#2F7353',
     fontSize: 9,
     fontWeight: '700',
   },
-  busy: { backgroundColor: '#F6EFE3', color: '#8B6421' },
+  busy: { backgroundColor: '#F6EFE3', color: '#8A5A37' },
   empty: { paddingVertical: 52, alignItems: 'center' },
   emptyTitle: {
     marginTop: 13,
-    color: '#33485D',
+    color: '#34443D',
     fontSize: 16,
     fontWeight: '800',
   },

@@ -15,104 +15,100 @@ import {
   View,
 } from 'react-native';
 
+import { ProviderCover } from '../components/provider-cover';
 import {
+  type AppCategory,
   type DirectoryProvider,
   type ServiceRequestStatus,
   useAppData,
 } from '../contexts/app-data';
-import { useAuth } from '../contexts/auth';
+import { useAuth, type ManagedUser } from '../contexts/auth';
+import { uploadImage } from '../services/firebase-storage';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
-type SpaceStatus = 'Publicado' | 'Pendiente' | 'Pausado';
+const REQUEST_STATUSES: ServiceRequestStatus[] = ['Enviada', 'Respondida', 'Agendada', 'Cerrada'];
 
-type AccessCredential = {
-  code: string;
-  role: string;
-  scope: string;
-  icon: IconName;
-};
-
-const ACCESS_CREDENTIALS: AccessCredential[] = [
-  {
-    code: 'ranco-admin',
-    role: 'Administrador general',
-    scope: 'Puede gestionar perfiles, categorías, subcategorías y destacados.',
-    icon: 'shield-checkmark-outline',
-  },
-  {
-    code: 'ranco-editor',
-    role: 'Editor de contenidos',
-    scope: 'Puede preparar perfiles y ordenar contenido pendiente.',
-    icon: 'create-outline',
-  },
-  {
-    code: 'ranco-soporte',
-    role: 'Soporte municipal',
-    scope: 'Puede revisar solicitudes y contactar prestadores.',
-    icon: 'headset-outline',
-  },
-];
-
-type ManagedCategory = {
+type DraftSubcategory = {
   id: string;
   name: string;
   description: string;
-  status: SpaceStatus;
+  icon: string;
 };
 
-type ManagedSubcategory = {
-  id: string;
-  categoryId: string;
-  name: string;
-  status: SpaceStatus;
-};
-
-const INITIAL_CATEGORIES: ManagedCategory[] = [
-  { id: 'hogar', name: 'Hogar y reparaciones', description: 'Oficios y reparaciones para viviendas.', status: 'Publicado' },
-  { id: 'campo', name: 'Jardín y parcela', description: 'Servicios de campo, poda, riego y terrenos.', status: 'Publicado' },
-  { id: 'energia', name: 'Energía y conectividad', description: 'Electricidad, energía solar e internet.', status: 'Publicado' },
+const ICON_OPTIONS: IconName[] = [
+  'hammer-outline', 'flash-outline', 'water-outline', 'construct-outline',
+  'color-palette-outline', 'key-outline', 'home-outline', 'flame-outline',
+  'cube-outline', 'leaf-outline', 'sparkles-outline', 'snow-outline',
+  'cut-outline', 'grid-outline', 'build-outline', 'car-outline',
+  'trail-sign-outline', 'trash-outline', 'restaurant-outline', 'bicycle-outline',
+  'gift-outline', 'people-outline', 'ellipse-outline', 'battery-charging-outline',
+  'settings-outline', 'funnel-outline', 'git-network-outline', 'sunny-outline',
+  'wifi-outline', 'planet-outline', 'videocam-outline', 'bed-outline',
+  'shield-checkmark-outline', 'heart-outline', 'medkit-outline', 'body-outline',
+  'paw-outline', 'briefcase-outline', 'map-outline', 'document-text-outline',
+  'laptop-outline', 'camera-outline', 'airplane-outline', 'checkmark-circle-outline',
 ];
 
-const INITIAL_SUBCATEGORIES: ManagedSubcategory[] = [
-  { id: 'electricidad', categoryId: 'hogar', name: 'Electricidad', status: 'Publicado' },
-  { id: 'gasfiteria', categoryId: 'hogar', name: 'Gasfitería', status: 'Publicado' },
-  { id: 'poda', categoryId: 'campo', name: 'Poda y tala', status: 'Publicado' },
-  { id: 'solar', categoryId: 'energia', name: 'Energía solar', status: 'Publicado' },
+const COLOR_OPTIONS: { color: string; background: string }[] = [
+  { color: '#1D5F4A', background: '#E2ECE1' },
+  { color: '#2F7353', background: '#E6EFE6' },
+  { color: '#2F7353', background: '#E6EFE6' },
+  { color: '#8A5A37', background: '#EFE6D6' },
+  { color: '#B94738', background: '#F9E4E0' },
+  { color: '#8A5A37', background: '#EFE6D6' },
+  { color: '#9A5C63', background: '#F1E1E2' },
+  { color: '#6E6356', background: '#E8E1D4' },
+  { color: '#536171', background: '#E9EEE5' },
+  { color: '#6F7A72', background: '#E9EEE5' },
 ];
 
-const REQUEST_STATUSES: ServiceRequestStatus[] = ['Enviada', 'Respondida', 'Agendada', 'Cerrada'];
+const isRemoteUrl = (uri: string) => /^https?:\/\//.test(uri);
+
+const slugify = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 
 export default function AdminScreen() {
   const { user, logout, managedUsers, createCommerceUser } = useAuth();
   const {
+    categories,
+    categoriesStatus,
+    deleteCategory,
+    saveCategory,
     createPendingProvider,
     providers,
+    providersStatus,
     requests,
+    requestsStatus,
     toggleProviderPlan,
     toggleProviderPublication,
     updateProvider,
     updateRequestStatus,
   } = useAppData();
-  const [accessCode, setAccessCode] = useState('');
-  const [isAuthorized, setIsAuthorized] = useState(user?.role === 'municipal_admin');
-  const [sessionRole, setSessionRole] = useState<AccessCredential | null>(null);
-  const [showAccessCode, setShowAccessCode] = useState(false);
-  const [accessError, setAccessError] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [serviceName, setServiceName] = useState('');
   const [phone, setPhone] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const [categories, setCategories] = useState(INITIAL_CATEGORIES);
-  const [subcategories, setSubcategories] = useState(INITIAL_SUBCATEGORIES);
-  const [categoryName, setCategoryName] = useState('');
-  const [categoryDescription, setCategoryDescription] = useState('');
-  const [subcategoryName, setSubcategoryName] = useState('');
+  const [newImages, setNewImages] = useState<string[]>([]);
+  const [newCategoryId, setNewCategoryId] = useState('');
+  const [newSubcategoryId, setNewSubcategoryId] = useState('');
   const [editingProviderId, setEditingProviderId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editService, setEditService] = useState('');
   const [editPhone, setEditPhone] = useState('');
-  const [editImage, setEditImage] = useState('');
+  const [editImages, setEditImages] = useState<string[]>([]);
+  const [editCategoryId, setEditCategoryId] = useState('');
+  const [editSubcategoryId, setEditSubcategoryId] = useState('');
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [categoryName, setCategoryName] = useState('');
+  const [categoryDescription, setCategoryDescription] = useState('');
+  const [categoryIcon, setCategoryIcon] = useState<IconName>('grid-outline');
+  const [categoryColor, setCategoryColor] = useState('#1D5F4A');
+  const [categoryBackground, setCategoryBackground] = useState('#E2ECE1');
+  const [categorySubcategories, setCategorySubcategories] = useState<DraftSubcategory[]>([]);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
@@ -128,28 +124,8 @@ export default function AdminScreen() {
     return { published, featured, paused, total: providers.length };
   }, [providers]);
 
-  const authorize = () => {
-    const credential = ACCESS_CREDENTIALS.find(
-      (item) => item.code === accessCode.trim().toLowerCase(),
-    );
-
-    if (!credential) {
-      setAccessError('Revisa la clave e intenta nuevamente.');
-      Alert.alert('Clave incorrecta', 'Este acceso es solo para administradores.');
-      return;
-    }
-
-    setSessionRole(credential);
-    setAccessError('');
-    setAccessCode('');
-    setIsAuthorized(true);
-  };
-
   const closeSession = async () => {
     await logout();
-    setIsAuthorized(false);
-    setSessionRole(null);
-    setShowAccessCode(false);
     router.replace('/home');
   };
 
@@ -167,7 +143,9 @@ export default function AdminScreen() {
     setEditName(provider.name);
     setEditService(provider.service);
     setEditPhone(provider.phone);
-    setEditImage(provider.images[0] ?? '');
+    setEditImages(provider.images);
+    setEditCategoryId(provider.categoryId);
+    setEditSubcategoryId(provider.subcategoryId);
   };
 
   const cancelEditingProvider = () => {
@@ -175,146 +153,276 @@ export default function AdminScreen() {
     setEditName('');
     setEditService('');
     setEditPhone('');
-    setEditImage('');
+    setEditImages([]);
+    setEditCategoryId('');
+    setEditSubcategoryId('');
   };
 
-  const pickProviderImage = async () => {
+  const resolveUploadedImages = async (uris: string[]) => {
+    const resolved = await Promise.all(
+      uris.map((uri) =>
+        isRemoteUrl(uri) ? Promise.resolve(uri) : uploadImage(uri, 'provider-images'),
+      ),
+    );
+
+    return resolved;
+  };
+
+  const pickImages = async (append: (next: string[]) => void) => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
-      Alert.alert('Permiso requerido', 'Necesitamos permiso para cargar una imagen del servicio.');
+      Alert.alert('Acceso requerido', 'Necesitamos acceso a tus imágenes para cargar fotos del servicio.');
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       quality: 0.82,
-      allowsMultipleSelection: false,
+      allowsMultipleSelection: true,
+      selectionLimit: 6,
     });
 
     if (!result.canceled) {
-      setEditImage(result.assets[0]?.uri ?? '');
+      const uris = result.assets.map((asset) => asset.uri).filter(Boolean) as string[];
+      append(uris);
     }
   };
 
-  const saveProviderChanges = () => {
+  const pickNewImages = () => {
+    pickImages((uris) => setNewImages((current) => [...current, ...uris].slice(0, 6)));
+  };
+
+  const pickEditImages = () => {
+    pickImages((uris) => setEditImages((current) => [...current, ...uris].slice(0, 6)));
+  };
+
+  const saveProviderChanges = async () => {
     if (!editingProviderId || !editName.trim() || !editService.trim() || !editPhone.trim()) {
       Alert.alert('Faltan datos', 'Completa nombre, servicio y teléfono antes de guardar.');
       return;
     }
 
-    updateProvider(editingProviderId, {
-      name: editName,
-      service: editService,
-      phone: editPhone,
-      image: editImage,
-    });
-    cancelEditingProvider();
-    Alert.alert('Perfil actualizado', 'Los cambios ya se reflejan en el directorio público.');
-  };
-
-  const createManagedCommerceUser = async () => {
-    const result = await createCommerceUser({
-      name: newUserName,
-      email: newUserEmail,
-      password: newUserPassword,
-      businessName: newUserBusiness,
-      serviceName: newUserService,
-      phone: newUserPhone,
-    });
-
-    if (!result.ok) {
-      Alert.alert('No se pudo crear', result.message);
+    if (!editCategoryId || !editSubcategoryId) {
+      Alert.alert('Faltan datos', 'Elige una categoría y un servicio de la lista.');
       return;
     }
 
-    setNewUserName('');
-    setNewUserEmail('');
-    setNewUserPassword('');
-    setNewUserBusiness('');
-    setNewUserService('');
-    setNewUserPhone('');
-    Alert.alert(
-      'Usuario creado',
-      `Entrega estas credenciales al comercio:\n\nCorreo: ${result.user.email}\nClave: ${result.user.password}`,
-    );
+    try {
+      const images = await resolveUploadedImages(editImages);
+      await updateProvider(editingProviderId, {
+        name: editName,
+        service: editService,
+        phone: editPhone,
+        images,
+        categoryId: editCategoryId,
+        subcategoryId: editSubcategoryId,
+      });
+      cancelEditingProvider();
+      Alert.alert('Perfil actualizado', 'Los cambios ya se reflejan en el directorio público.');
+    } catch (error) {
+      Alert.alert(
+        'No se pudo actualizar',
+        error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
+      );
+    }
   };
 
-  const addPendingSpace = () => {
+  const createManagedCommerceUser = async () => {
+    try {
+      const result = await createCommerceUser({
+        name: newUserName,
+        email: newUserEmail,
+        password: newUserPassword,
+        businessName: newUserBusiness,
+        serviceName: newUserService,
+        phone: newUserPhone,
+      });
+
+      if (!result.ok) {
+        Alert.alert('No se pudo crear', result.message);
+        return;
+      }
+
+      setNewUserName('');
+      setNewUserEmail('');
+      setNewUserPassword('');
+      setNewUserBusiness('');
+      setNewUserService('');
+      setNewUserPhone('');
+      Alert.alert(
+        'Usuario creado',
+        `El comercio ${result.user.businessName || result.user.name} ya puede iniciar sesión con su correo.`,
+      );
+    } catch (error) {
+      Alert.alert(
+        'No se pudo crear',
+        error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
+      );
+    }
+  };
+
+  const addPendingSpace = async () => {
     if (!businessName.trim() || !serviceName.trim() || !phone.trim()) {
       Alert.alert('Faltan datos', 'Ingresa nombre, servicio y teléfono.');
       return;
     }
 
-    createPendingProvider({
-      name: businessName.trim(),
-      service: serviceName.trim(),
-      phone: phone.trim(),
-      image: imageUrl,
-    });
-
-    setBusinessName('');
-    setServiceName('');
-    setPhone('');
-    setImageUrl('');
-    Alert.alert('Espacio preparado', 'Quedó agregado como pendiente para completar y publicar.');
-  };
-
-  const addCategory = () => {
-    if (!categoryName.trim() || !categoryDescription.trim()) {
-      Alert.alert('Faltan datos', 'Ingresa nombre y descripción de la categoría.');
+    if (!newCategoryId || !newSubcategoryId) {
+      Alert.alert('Faltan datos', 'Elige una categoría y un servicio de la lista.');
       return;
     }
 
-    setCategories((current) => [
-      {
-        id: categoryName.trim().toLowerCase().replace(/\s+/g, '-'),
-        name: categoryName.trim(),
-        description: categoryDescription.trim(),
-        status: 'Pendiente',
-      },
-      ...current,
-    ]);
+    try {
+      const images = await resolveUploadedImages(newImages);
+      await createPendingProvider({
+        name: businessName.trim(),
+        service: serviceName.trim(),
+        phone: phone.trim(),
+        images,
+        categoryId: newCategoryId,
+        subcategoryId: newSubcategoryId,
+      });
+
+      setBusinessName('');
+      setServiceName('');
+      setPhone('');
+      setNewImages([]);
+      setNewCategoryId('');
+      setNewSubcategoryId('');
+      Alert.alert('Espacio preparado', 'Quedó agregado como pendiente para completar y publicar.');
+    } catch (error) {
+      Alert.alert(
+        'No se pudo preparar',
+        error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
+      );
+    }
+  };
+
+  const resetCategoryForm = () => {
+    setEditingCategoryId(null);
     setCategoryName('');
     setCategoryDescription('');
+    setCategoryIcon('grid-outline');
+    setCategoryColor('#1D5F4A');
+    setCategoryBackground('#E2ECE1');
+    setCategorySubcategories([]);
   };
 
-  const addSubcategory = () => {
-    if (!subcategoryName.trim()) {
-      Alert.alert('Faltan datos', 'Ingresa el nombre de la subcategoría.');
+  const startEditingCategory = (category: AppCategory) => {
+    setEditingCategoryId(category.id);
+    setCategoryName(category.name);
+    setCategoryDescription(category.description);
+    setCategoryIcon((category.icon || 'grid-outline') as IconName);
+    setCategoryColor(category.iconColor || '#1D5F4A');
+    setCategoryBackground(category.iconBackground || '#E2ECE1');
+    setCategorySubcategories(
+      category.subcategories.map((sub) => ({ ...sub })),
+    );
+  };
+
+  const updateDraftSubcategory = (id: string, field: keyof DraftSubcategory, value: string) => {
+    setCategorySubcategories((current) =>
+      current.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
+    );
+  };
+
+  const addDraftSubcategory = () => {
+    setCategorySubcategories((current) => [
+      ...current,
+      { id: `sub-${Date.now()}`, name: '', description: '', icon: 'construct-outline' },
+    ]);
+  };
+
+  const removeDraftSubcategory = (id: string) => {
+    setCategorySubcategories((current) => current.filter((item) => item.id !== id));
+  };
+
+  const persistCategory = async () => {
+    if (!categoryName.trim()) {
+      Alert.alert('Faltan datos', 'El nombre de la categoría es obligatorio.');
       return;
     }
 
-    setSubcategories((current) => [
+    const subcategories = categorySubcategories
+      .filter((sub) => sub.name.trim())
+      .map((sub) => ({
+        id: sub.id?.trim() || slugify(sub.name) || `sub-${Date.now()}`,
+        name: sub.name.trim(),
+        description: sub.description.trim(),
+        icon: (sub.icon || 'construct-outline') as IconName,
+      }));
+
+    try {
+      await saveCategory(editingCategoryId, {
+        name: categoryName.trim(),
+        description: categoryDescription.trim(),
+        icon: categoryIcon,
+        iconColor: categoryColor,
+        iconBackground: categoryBackground,
+        subcategories,
+      });
+      resetCategoryForm();
+      Alert.alert('Categoría guardada', 'Ya está visible en el directorio público.');
+    } catch (error) {
+      Alert.alert(
+        'No se pudo guardar la categoría',
+        error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
+      );
+    }
+  };
+
+  const handleDeleteCategory = (category: AppCategory) => {
+    Alert.alert('Eliminar categoría', `¿Eliminar "${category.name}"?`, [
+      { text: 'Cancelar', style: 'cancel' },
       {
-        id: subcategoryName.trim().toLowerCase().replace(/\s+/g, '-'),
-        categoryId: categories[0]?.id ?? 'hogar',
-        name: subcategoryName.trim(),
-        status: 'Pendiente',
+        text: 'Eliminar',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteCategory(category.id);
+          } catch (error) {
+            Alert.alert(
+              'No se pudo eliminar',
+              error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
+            );
+          }
+        },
       },
-      ...current,
     ]);
-    setSubcategoryName('');
   };
 
-  const toggleCategory = (categoryId: string) => {
-    setCategories((current) =>
-      current.map((category) =>
-        category.id === categoryId
-          ? { ...category, status: category.status === 'Publicado' ? 'Pausado' : 'Publicado' }
-          : category,
-      ),
-    );
+  const changeRequestStatus = async (requestId: string, status: ServiceRequestStatus) => {
+    try {
+      await updateRequestStatus(requestId, status);
+    } catch (error) {
+      Alert.alert(
+        'No se pudo actualizar',
+        error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
+      );
+    }
   };
 
-  const toggleSubcategory = (subcategoryId: string) => {
-    setSubcategories((current) =>
-      current.map((subcategory) =>
-        subcategory.id === subcategoryId
-          ? { ...subcategory, status: subcategory.status === 'Publicado' ? 'Pausado' : 'Publicado' }
-          : subcategory,
-      ),
-    );
+  const handleTogglePublication = async (providerId: string) => {
+    try {
+      await toggleProviderPublication(providerId);
+    } catch (error) {
+      Alert.alert(
+        'No se pudo publicar',
+        error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
+      );
+    }
+  };
+
+  const handleTogglePlan = async (providerId: string) => {
+    try {
+      await toggleProviderPlan(providerId);
+    } catch (error) {
+      Alert.alert(
+        'No se pudo cambiar el plan',
+        error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
+      );
+    }
   };
 
   if (!user) {
@@ -332,71 +440,16 @@ export default function AdminScreen() {
     return <Redirect href="/home" />;
   }
 
-  if (!isAuthorized) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.loginContainer} keyboardShouldPersistTaps="handled">
-          <View style={styles.loginTopbar}>
-            <Pressable onPress={goBack} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={22} color="#1F446A" />
-            </Pressable>
-            <Text style={styles.loginBrand}>RancoConecta</Text>
-            <View style={styles.backButtonSpacer} />
-          </View>
-
-          <View style={styles.loginIntro}>
-            <View style={styles.loginIntroText}>
-              <Text style={styles.loginEyebrow}>ACCESO INTERNO</Text>
-              <Text style={styles.loginTitle}>Panel de administración</Text>
-              <Text style={styles.loginText}>
-                Ingresa con una clave autorizada.
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.loginCard}>
-            <Text style={styles.loginCardTitle}>Clave interna</Text>
-            <View style={[styles.passwordBox, !!accessError && styles.passwordBoxError]}>
-              <TextInput
-                value={accessCode}
-                onChangeText={(value) => {
-                  setAccessCode(value);
-                  setAccessError('');
-                }}
-                placeholder=""
-                placeholderTextColor="#5F7080"
-                secureTextEntry={!showAccessCode}
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="go"
-                onSubmitEditing={authorize}
-                style={styles.passwordInput}
-              />
-              <Pressable onPress={() => setShowAccessCode((current) => !current)} style={styles.eyeButton}>
-                <Ionicons name={showAccessCode ? 'eye-off-outline' : 'eye-outline'} size={20} color="#536678" />
-              </Pressable>
-            </View>
-            {!!accessError && <Text style={styles.accessError}>{accessError}</Text>}
-            <Pressable onPress={authorize} style={styles.primaryButton}>
-              <Text style={styles.primaryButtonText}>Entrar al panel</Text>
-              <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-            </Pressable>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.topbar}>
           <Pressable onPress={goBack} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={22} color="#1F446A" />
+            <Ionicons name="arrow-back" size={22} color="#2F7353" />
           </Pressable>
-          <Text style={styles.topbarTitle}>Panel de administración</Text>
+          <Text style={styles.topbarTitle}>Panel interno</Text>
           <Pressable onPress={closeSession} style={styles.backButton}>
-            <Ionicons name="lock-closed-outline" size={20} color="#224D78" />
+            <Ionicons name="lock-closed-outline" size={20} color="#1D5F4A" />
           </Pressable>
         </View>
 
@@ -406,12 +459,6 @@ export default function AdminScreen() {
           <Text style={styles.heroText}>
             Agrega, pausa y destaca servicios visibles en el directorio público.
           </Text>
-          {sessionRole && (
-            <View style={styles.sessionBadge}>
-              <Ionicons name={sessionRole.icon} size={15} color="#FFFFFF" />
-              <Text style={styles.sessionText}>Sesión: {sessionRole.role}</Text>
-            </View>
-          )}
         </View>
 
         <View style={styles.statsGrid}>
@@ -427,9 +474,18 @@ export default function AdminScreen() {
             Cambia el estado visible para el vecino mientras se coordina el servicio.
           </Text>
 
-          {requests.length === 0 ? (
+          {requestsStatus === 'loading' ? (
             <View style={styles.emptyAdminBox}>
-              <Ionicons name="chatbubble-ellipses-outline" size={24} color="#87929E" />
+              <Text style={styles.emptyAdminText}>Cargando solicitudes…</Text>
+            </View>
+          ) : requestsStatus === 'error' ? (
+            <View style={styles.emptyAdminBox}>
+              <Ionicons name="alert-circle-outline" size={24} color="#8A9288" />
+              <Text style={styles.emptyAdminText}>No se pudieron cargar las solicitudes.</Text>
+            </View>
+          ) : requests.length === 0 ? (
+            <View style={styles.emptyAdminBox}>
+              <Ionicons name="chatbubble-ellipses-outline" size={24} color="#8A9288" />
               <Text style={styles.emptyAdminText}>Aún no hay solicitudes enviadas.</Text>
             </View>
           ) : (
@@ -446,7 +502,7 @@ export default function AdminScreen() {
                   {REQUEST_STATUSES.map((status) => (
                     <Pressable
                       key={status}
-                      onPress={() => updateRequestStatus(request.id, status)}
+                      onPress={() => changeRequestStatus(request.id, status)}
                       style={[
                         styles.statusChip,
                         request.status === status && styles.statusChipActive,
@@ -471,20 +527,20 @@ export default function AdminScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Usuarios y perfiles</Text>
           <Text style={styles.sectionText}>
-            Crea el acceso interno para un comercio. El usuario queda pendiente hasta validar el permiso municipal.
+            Crea el acceso interno para un comercio. El usuario queda pendiente hasta activar su membresía.
           </Text>
           <TextInput
             value={newUserName}
             onChangeText={setNewUserName}
             placeholder="Nombre de contacto"
-            placeholderTextColor="#87929E"
+            placeholderTextColor="#8A9288"
             style={styles.input}
           />
           <TextInput
             value={newUserEmail}
             onChangeText={setNewUserEmail}
             placeholder="Correo de acceso"
-            placeholderTextColor="#87929E"
+            placeholderTextColor="#8A9288"
             autoCapitalize="none"
             keyboardType="email-address"
             style={styles.input}
@@ -493,7 +549,7 @@ export default function AdminScreen() {
             value={newUserPassword}
             onChangeText={setNewUserPassword}
             placeholder="Clave temporal"
-            placeholderTextColor="#87929E"
+            placeholderTextColor="#8A9288"
             autoCapitalize="none"
             style={styles.input}
           />
@@ -501,26 +557,26 @@ export default function AdminScreen() {
             value={newUserBusiness}
             onChangeText={setNewUserBusiness}
             placeholder="Nombre del negocio"
-            placeholderTextColor="#87929E"
+            placeholderTextColor="#8A9288"
             style={styles.input}
           />
           <TextInput
             value={newUserService}
             onChangeText={setNewUserService}
             placeholder="Servicio principal"
-            placeholderTextColor="#87929E"
+            placeholderTextColor="#8A9288"
             style={styles.input}
           />
           <TextInput
             value={newUserPhone}
             onChangeText={setNewUserPhone}
             placeholder="Teléfono o WhatsApp"
-            placeholderTextColor="#87929E"
+            placeholderTextColor="#8A9288"
             keyboardType="phone-pad"
             style={styles.input}
           />
           <Pressable onPress={createManagedCommerceUser} style={styles.secondaryButton}>
-            <Ionicons name="person-add-outline" size={19} color="#224D78" />
+            <Ionicons name="person-add-outline" size={19} color="#1D5F4A" />
             <Text style={styles.secondaryButtonText}>Crear usuario de comercio</Text>
           </Pressable>
 
@@ -529,128 +585,271 @@ export default function AdminScreen() {
             .map((managedUser) => (
               <View key={managedUser.id} style={styles.userRow}>
                 <View style={styles.userIcon}>
-                  <Ionicons name="storefront-outline" size={18} color="#224D78" />
+                  <Ionicons name="storefront-outline" size={18} color="#1D5F4A" />
                 </View>
                 <View style={styles.userInfo}>
                   <Text style={styles.simpleTitle}>{managedUser.businessName || managedUser.name}</Text>
                   <Text style={styles.simpleText}>{managedUser.email}</Text>
-                  <Text style={styles.userCredential}>Clave: {managedUser.password}</Text>
+                  <Text style={styles.simpleText}>{managedUser.serviceName}</Text>
                 </View>
-                <Text style={styles.userStatus}>Pendiente</Text>
+                <Text style={styles.userStatus}>
+                  {userStatusLabel(managedUser.status)}
+                </Text>
               </View>
             ))}
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Nuevo perfil de servicio</Text>
+          <Text style={styles.sectionTitle}>Categorías del directorio</Text>
           <Text style={styles.sectionText}>
-            Crea un cupo pendiente con imagen de portada para luego completar rubro, cobertura y detalles.
+            Administra rubros y sus servicios. Cada categoría se ve en el inicio con su icono y color.
           </Text>
-          <TextInput
-            value={businessName}
-            onChangeText={setBusinessName}
-            placeholder="Nombre del negocio o prestador"
-            placeholderTextColor="#87929E"
-            style={styles.input}
-          />
-          <TextInput
-            value={serviceName}
-            onChangeText={setServiceName}
-            placeholder="Servicio principal"
-            placeholderTextColor="#87929E"
-            style={styles.input}
-          />
-          <TextInput
-            value={phone}
-            onChangeText={setPhone}
-            placeholder="Teléfono o WhatsApp"
-            placeholderTextColor="#87929E"
-            keyboardType="phone-pad"
-            style={styles.input}
-          />
-          <TextInput
-            value={imageUrl}
-            onChangeText={setImageUrl}
-            placeholder="URL de imagen de portada"
-            placeholderTextColor="#87929E"
-            autoCapitalize="none"
-            style={styles.input}
-          />
-          <Pressable onPress={addPendingSpace} style={styles.secondaryButton}>
-            <Ionicons name="add-circle-outline" size={19} color="#224D78" />
-            <Text style={styles.secondaryButtonText}>Preparar perfil</Text>
-          </Pressable>
-        </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Categorías</Text>
-          <Text style={styles.sectionText}>
-            Administra los rubros visibles del directorio público.
+          {categoriesStatus === 'loading' ? (
+            <View style={styles.emptyAdminBox}>
+              <Text style={styles.emptyAdminText}>Cargando categorías…</Text>
+            </View>
+          ) : categoriesStatus === 'error' ? (
+            <View style={styles.emptyAdminBox}>
+              <Text style={styles.emptyAdminText}>No se pudieron cargar las categorías.</Text>
+            </View>
+          ) : categories.length === 0 ? (
+            <View style={styles.emptyAdminBox}>
+              <Ionicons name="grid-outline" size={24} color="#8A9288" />
+              <Text style={styles.emptyAdminText}>Aún no hay categorías. Crea la primera abajo.</Text>
+            </View>
+          ) : (
+            categories.map((category) => (
+              <View key={category.id} style={styles.categoryRow}>
+                <View style={[styles.categoryIconBox, { backgroundColor: category.iconBackground }]}>
+                  <Ionicons name={category.icon as IconName} size={19} color={category.iconColor} />
+                </View>
+                <View style={styles.categoryInfo}>
+                  <Text numberOfLines={1} style={styles.simpleTitle}>{category.name}</Text>
+                  <Text numberOfLines={2} style={styles.simpleText}>
+                    {category.subcategories.length} servicios · {category.description}
+                  </Text>
+                </View>
+                <View style={styles.categoryActions}>
+                  <Pressable onPress={() => startEditingCategory(category)} style={styles.actionButton}>
+                    <Text style={styles.actionText}>Editar</Text>
+                  </Pressable>
+                  <Pressable onPress={() => handleDeleteCategory(category)} style={styles.actionButton}>
+                    <Text style={styles.dangerText}>Eliminar</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ))
+          )}
+
+          <View style={styles.formDivider} />
+
+          <Text style={styles.fieldLabel}>
+            {editingCategoryId ? 'Editar categoría' : 'Nueva categoría'}
           </Text>
           <TextInput
             value={categoryName}
             onChangeText={setCategoryName}
-            placeholder="Nombre de la categoría"
-            placeholderTextColor="#87929E"
+            placeholder="Nombre de la categoría (ej: Hogar y reparaciones)"
+            placeholderTextColor="#8A9288"
             style={styles.input}
           />
           <TextInput
             value={categoryDescription}
             onChangeText={setCategoryDescription}
             placeholder="Descripción breve"
-            placeholderTextColor="#87929E"
+            placeholderTextColor="#8A9288"
             style={styles.input}
           />
-          <Pressable onPress={addCategory} style={styles.secondaryButton}>
-            <Ionicons name="grid-outline" size={19} color="#224D78" />
-            <Text style={styles.secondaryButtonText}>Agregar categoría</Text>
-          </Pressable>
 
-          {categories.map((category) => (
-            <View key={category.id} style={styles.simpleRow}>
-              <View style={styles.simpleInfo}>
-                <Text style={styles.simpleTitle}>{category.name}</Text>
-                <Text style={styles.simpleText}>{category.description}</Text>
-              </View>
-              <Pressable onPress={() => toggleCategory(category.id)} style={styles.actionButton}>
-                <Text style={styles.actionText}>
-                  {category.status === 'Publicado' ? 'Pausar' : 'Publicar'}
-                </Text>
+          <Text style={styles.fieldLabel}>Icono</Text>
+          <View style={styles.iconPicker}>
+            {ICON_OPTIONS.map((icon) => (
+              <Pressable
+                key={icon}
+                onPress={() => setCategoryIcon(icon)}
+                style={[
+                  styles.iconOption,
+                  categoryIcon === icon && { borderColor: categoryColor, backgroundColor: categoryBackground },
+                ]}
+              >
+                <Ionicons name={icon} size={19} color={categoryColor} />
               </Pressable>
+            ))}
+          </View>
+
+          <Text style={styles.fieldLabel}>Color</Text>
+          <View style={styles.iconPicker}>
+            {COLOR_OPTIONS.map((option) => (
+              <Pressable
+                key={option.color}
+                onPress={() => {
+                  setCategoryColor(option.color);
+                  setCategoryBackground(option.background);
+                }}
+                style={[
+                  styles.colorOption,
+                  { backgroundColor: option.background },
+                  categoryColor === option.color && styles.colorOptionActive,
+                ]}
+              >
+                <Ionicons name="square" size={19} color={option.color} />
+              </Pressable>
+            ))}
+          </View>
+
+          <View style={styles.subheaderRow}>
+            <Text style={styles.fieldLabel}>Servicios de la categoría</Text>
+            <Pressable onPress={addDraftSubcategory} style={styles.smallAddButton}>
+              <Ionicons name="add" size={16} color="#1D5F4A" />
+              <Text style={styles.smallAddText}>Agregar</Text>
+            </Pressable>
+          </View>
+          {categorySubcategories.map((subcategory) => (
+            <View key={subcategory.id} style={styles.subcategoryCard}>
+              <View style={styles.subcategoryInputs}>
+                <TextInput
+                  value={subcategory.name}
+                  onChangeText={(value) => updateDraftSubcategory(subcategory.id, 'name', value)}
+                  placeholder="Nombre del servicio"
+                  placeholderTextColor="#8A9288"
+                  style={styles.editInput}
+                />
+                <TextInput
+                  value={subcategory.description}
+                  onChangeText={(value) =>
+                    updateDraftSubcategory(subcategory.id, 'description', value)
+                  }
+                  placeholder="Descripción corta"
+                  placeholderTextColor="#8A9288"
+                  style={styles.editInput}
+                />
+              </View>
+              <View style={styles.subcategoryFooter}>
+                <View style={styles.iconPicker}>
+                  {ICON_OPTIONS.slice(0, 14).map((icon) => (
+                    <Pressable
+                      key={icon}
+                      onPress={() => updateDraftSubcategory(subcategory.id, 'icon', icon)}
+                      style={[
+                        styles.iconOption,
+                        subcategory.icon === icon && { borderColor: categoryColor, backgroundColor: categoryBackground },
+                      ]}
+                    >
+                      <Ionicons name={icon} size={16} color={categoryColor} />
+                    </Pressable>
+                  ))}
+                </View>
+                <Pressable
+                  onPress={() => removeDraftSubcategory(subcategory.id)}
+                  style={styles.smallRemoveButton}
+                >
+                  <Ionicons name="trash-outline" size={16} color="#8A4B45" />
+                </Pressable>
+              </View>
             </View>
           ))}
+          {categorySubcategories.length === 0 && (
+            <Text style={styles.hintText}>Agrega al menos un servicio para esta categoría.</Text>
+          )}
+
+          <View style={styles.editFooter}>
+            {editingCategoryId && (
+              <Pressable onPress={resetCategoryForm} style={styles.cancelButton}>
+                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              </Pressable>
+            )}
+            <Pressable onPress={persistCategory} style={styles.saveButton}>
+              <Text style={styles.saveButtonText}>
+                {editingCategoryId ? 'Guardar cambios' : 'Crear categoría'}
+              </Text>
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Subcategorías</Text>
+          <Text style={styles.sectionTitle}>Nuevo perfil de servicio</Text>
           <Text style={styles.sectionText}>
-            Crea servicios específicos dentro del primer rubro activo por ahora.
+            Crea un cupo pendiente eligiendo rubro y subir fotos de la portada para el perfil público.
           </Text>
           <TextInput
-            value={subcategoryName}
-            onChangeText={setSubcategoryName}
-            placeholder="Nombre de la subcategoría"
-            placeholderTextColor="#87929E"
+            value={businessName}
+            onChangeText={setBusinessName}
+            placeholder="Nombre del negocio o prestador"
+            placeholderTextColor="#8A9288"
             style={styles.input}
           />
-          <Pressable onPress={addSubcategory} style={styles.secondaryButton}>
-            <Ionicons name="list-outline" size={19} color="#224D78" />
-            <Text style={styles.secondaryButtonText}>Agregar subcategoría</Text>
-          </Pressable>
+          <TextInput
+            value={serviceName}
+            onChangeText={setServiceName}
+            placeholder="Servicio principal"
+            placeholderTextColor="#8A9288"
+            style={styles.input}
+          />
+          <TextInput
+            value={phone}
+            onChangeText={setPhone}
+            placeholder="Teléfono o WhatsApp"
+            placeholderTextColor="#8A9288"
+            keyboardType="phone-pad"
+            style={styles.input}
+          />
 
-          {subcategories.map((subcategory) => (
-            <View key={subcategory.id} style={styles.simpleRow}>
-              <View style={styles.simpleInfo}>
-                <Text style={styles.simpleTitle}>{subcategory.name}</Text>
-                <Text style={styles.simpleText}>Rubro: {subcategory.categoryId}</Text>
+          <Text style={styles.fieldLabel}>Rubro (categoría)</Text>
+          <View style={styles.chipRow}>
+            {categories.map((category) => (
+              <OptionChip
+                key={category.id}
+                label={category.name}
+                active={newCategoryId === category.id}
+                onPress={() => {
+                  setNewCategoryId(category.id);
+                  setNewSubcategoryId('');
+                }}
+              />
+            ))}
+          </View>
+
+          {!!newCategoryId && (
+            <>
+              <Text style={styles.fieldLabel}>Servicio dentro del rubro</Text>
+              <View style={styles.chipRow}>
+                {categories
+                  .find((category) => category.id === newCategoryId)
+                  ?.subcategories.map((subcategory) => (
+                    <OptionChip
+                      key={subcategory.id}
+                      label={subcategory.name}
+                      active={newSubcategoryId === subcategory.id}
+                      onPress={() => setNewSubcategoryId(subcategory.id)}
+                    />
+                  ))}
               </View>
-              <Pressable onPress={() => toggleSubcategory(subcategory.id)} style={styles.actionButton}>
-                <Text style={styles.actionText}>
-                  {subcategory.status === 'Publicado' ? 'Pausar' : 'Publicar'}
-                </Text>
-              </Pressable>
-            </View>
-          ))}
+            </>
+          )}
+
+          <Text style={styles.fieldLabel}>Fotos del servicio</Text>
+          <View style={styles.imageGrid}>
+            {newImages.map((uri, index) => (
+              <View key={`${uri}-${index}`} style={styles.imageTile}>
+                <Image source={{ uri }} style={styles.imageTileImage} contentFit="cover" />
+                <Pressable
+                  onPress={() => setNewImages((current) => current.filter((_, i) => i !== index))}
+                  style={styles.imageRemove}
+                >
+                  <Ionicons name="close" size={15} color="#FFFFFF" />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+          <Pressable onPress={pickNewImages} style={styles.imageButton}>
+            <Ionicons name="images-outline" size={17} color="#1D5F4A" />
+            <Text style={styles.imageButtonText}>Elegir fotos de la galería</Text>
+          </Pressable>
+          <Pressable onPress={addPendingSpace} style={styles.secondaryButton}>
+            <Ionicons name="add-circle-outline" size={19} color="#1D5F4A" />
+            <Text style={styles.secondaryButtonText}>Preparar perfil</Text>
+          </Pressable>
         </View>
 
         <View style={styles.section}>
@@ -659,9 +858,21 @@ export default function AdminScreen() {
             Los cambios de esta lista se reflejan en el directorio público de la app.
           </Text>
 
-          {providers.map((provider) => (
+          {providersStatus === 'loading' || providersStatus === 'error' ? (
+            <View style={styles.emptyAdminBox}>
+              <Text style={styles.emptyAdminText}>
+                {providersStatus === 'loading' ? 'Cargando perfiles…' : 'No se pudieron cargar los perfiles.'}
+              </Text>
+            </View>
+          ) : providers.length === 0 ? (
+            <View style={styles.emptyAdminBox}>
+              <Ionicons name="storefront-outline" size={24} color="#8A9288" />
+              <Text style={styles.emptyAdminText}>Aún no hay perfiles en el directorio.</Text>
+            </View>
+          ) : (
+            providers.map((provider) => (
             <View key={provider.id} style={styles.providerCard}>
-              <Image source={{ uri: provider.images[0] }} style={styles.providerCover} contentFit="cover" />
+              <ProviderCover uri={provider.images[0]} style={styles.providerCover} />
               <View style={styles.providerInfo}>
                 <View style={styles.providerHeader}>
                   <Text numberOfLines={1} style={styles.providerName}>
@@ -682,12 +893,12 @@ export default function AdminScreen() {
                   {provider.locationName} · Plan {provider.plan}
                 </Text>
                 <View style={styles.actions}>
-                  <Pressable onPress={() => toggleProviderPublication(provider.id)} style={styles.actionButton}>
+                  <Pressable onPress={() => handleTogglePublication(provider.id)} style={styles.actionButton}>
                     <Text style={styles.actionText}>
                       {provider.publicationStatus === 'Publicado' ? 'Pausar' : 'Publicar'}
                     </Text>
                   </Pressable>
-                  <Pressable onPress={() => toggleProviderPlan(provider.id)} style={styles.actionButton}>
+                  <Pressable onPress={() => handleTogglePlan(provider.id)} style={styles.actionButton}>
                     <Text style={styles.actionText}>
                       {provider.plan === 'Destacado' ? 'Plan base' : 'Destacar'}
                     </Text>
@@ -698,21 +909,62 @@ export default function AdminScreen() {
                 </View>
                 {editingProviderId === provider.id && (
                   <View style={styles.editPanel}>
-                    {!!editImage && <Image source={{ uri: editImage }} style={styles.editCover} contentFit="cover" />}
+                    <Text style={styles.fieldLabel}>Fotos del perfil</Text>
+                    <View style={styles.imageGrid}>
+                      {editImages.map((uri, index) => (
+                        <View key={`${uri}-${index}`} style={styles.imageTile}>
+                          <Image source={{ uri }} style={styles.imageTileImage} contentFit="cover" />
+                          <Pressable
+                            onPress={() =>
+                              setEditImages((current) => current.filter((_, i) => i !== index))
+                            }
+                            style={styles.imageRemove}
+                          >
+                            <Ionicons name="close" size={15} color="#FFFFFF" />
+                          </Pressable>
+                        </View>
+                      ))}
+                    </View>
                     <View style={styles.editActions}>
-                      <Pressable onPress={pickProviderImage} style={styles.imageButton}>
-                        <Ionicons name="image-outline" size={17} color="#224D78" />
-                        <Text style={styles.imageButtonText}>Cargar imagen</Text>
+                      <Pressable onPress={pickEditImages} style={styles.imageButton}>
+                        <Ionicons name="images-outline" size={17} color="#1D5F4A" />
+                        <Text style={styles.imageButtonText}>Agregar fotos</Text>
                       </Pressable>
                     </View>
-                    <TextInput
-                      value={editImage}
-                      onChangeText={setEditImage}
-                      placeholder="URL o imagen cargada"
-                      placeholderTextColor="#6A7B8A"
-                      autoCapitalize="none"
-                      style={styles.editInput}
-                    />
+
+                    <Text style={styles.fieldLabel}>Rubro (categoría)</Text>
+                    <View style={styles.chipRow}>
+                      {categories.map((category) => (
+                        <OptionChip
+                          key={category.id}
+                          label={category.name}
+                          active={editCategoryId === category.id}
+                          onPress={() => {
+                            setEditCategoryId(category.id);
+                            setEditSubcategoryId('');
+                          }}
+                        />
+                      ))}
+                    </View>
+
+                    {!!editCategoryId && (
+                      <>
+                        <Text style={styles.fieldLabel}>Servicio dentro del rubro</Text>
+                        <View style={styles.chipRow}>
+                          {categories
+                            .find((category) => category.id === editCategoryId)
+                            ?.subcategories.map((subcategory) => (
+                              <OptionChip
+                                key={subcategory.id}
+                                label={subcategory.name}
+                                active={editSubcategoryId === subcategory.id}
+                                onPress={() => setEditSubcategoryId(subcategory.id)}
+                              />
+                            ))}
+                        </View>
+                      </>
+                    )}
+
                     <TextInput
                       value={editName}
                       onChangeText={setEditName}
@@ -747,7 +999,8 @@ export default function AdminScreen() {
                 )}
               </View>
             </View>
-          ))}
+          ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -757,24 +1010,47 @@ export default function AdminScreen() {
 function Stat({ label, value, icon }: { label: string; value: number; icon: IconName }) {
   return (
     <View style={styles.statCard}>
-      <Ionicons name={icon} size={20} color="#224D78" />
+      <Ionicons name={icon} size={20} color="#1D5F4A" />
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }
 
+function OptionChip({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.optionChip, active && styles.optionChipActive]}
+    >
+      <Text style={[styles.optionChipText, active && styles.optionChipTextActive]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function userStatusLabel(status: ManagedUser['status']) {
+  switch (status) {
+    case 'ACTIVE_COMMERCE':
+      return 'Membresía activa';
+    case 'MUNICIPAL_ADMIN':
+      return 'Administración';
+    default:
+      return 'Pendiente';
+  }
+}
+
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F7F8F4' },
-  loginContainer: {
-    flexGrow: 1,
-    width: '100%',
-    maxWidth: 430,
-    alignSelf: 'center',
-    paddingHorizontal: 22,
-    paddingVertical: 28,
-    justifyContent: 'center',
-  },
+  safeArea: { flex: 1, backgroundColor: '#F3ECDD' },
   content: {
     width: '100%',
     maxWidth: 920,
@@ -796,119 +1072,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E1E6EB',
+    borderColor: '#DED8CB',
   },
-  backButtonSpacer: { width: 43, height: 43 },
-  topbarTitle: { color: '#1F446A', fontSize: 16, fontWeight: '800' },
-  loginTopbar: {
-    marginBottom: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  loginBrand: {
-    color: '#1F446A',
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  loginIntro: {
-    paddingHorizontal: 2,
-    paddingBottom: 2,
-  },
-  loginIntroText: { flex: 1 },
-  loginCard: {
-    marginTop: 18,
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-    backgroundColor: 'transparent',
-  },
-  lockIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#D89222',
-  },
-  loginEyebrow: {
-    color: '#B97012',
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  loginTitle: {
-    marginTop: 7,
-    color: '#1F446A',
-    fontSize: 26,
-    lineHeight: 31,
-    fontWeight: '800',
-  },
-  loginText: {
-    marginTop: 6,
-    color: '#536678',
-    fontSize: 13,
-    lineHeight: 20,
-    fontWeight: '500',
-  },
-  loginCardTitle: { color: '#1F446A', fontSize: 12, fontWeight: '800' },
-  passwordBox: {
-    minHeight: 48,
-    marginTop: 4,
-    paddingLeft: 0,
-    paddingRight: 0,
-    borderRadius: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#B8CADB',
-  },
-  passwordBoxError: { borderBottomColor: '#C66A58' },
-  passwordInput: {
-    flex: 1,
-    paddingVertical: 12,
-    marginRight: 10,
-    color: '#1F446A',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  eyeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  accessError: { marginTop: 8, color: '#9A4236', fontSize: 12, fontWeight: '700' },
+  topbarTitle: { color: '#2F7353', fontSize: 16, fontWeight: '800' },
   input: {
     minHeight: 54,
     marginTop: 12,
     paddingHorizontal: 15,
     borderRadius: 16,
-    color: '#243F59',
+    color: '#34443D',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DDE5EC',
+    borderColor: '#DED8CB',
     fontSize: 14,
   },
-  primaryButton: {
-    height: 52,
-    marginTop: 18,
-    borderRadius: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#224D78',
-  },
-  primaryButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
   hero: {
     padding: 23,
     borderRadius: 24,
-    backgroundColor: '#183653',
+    backgroundColor: '#1D5F4A',
   },
   eyebrow: {
-    color: '#D2DEE8',
+    color: '#D8E7DD',
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1.2,
@@ -922,22 +1106,10 @@ const styles = StyleSheet.create({
   },
   heroText: {
     marginTop: 7,
-    color: '#DCE5ED',
+    color: '#EEF5EE',
     fontSize: 13,
     lineHeight: 20,
   },
-  sessionBadge: {
-    alignSelf: 'flex-start',
-    marginTop: 15,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 11,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-  },
-  sessionText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
   statsGrid: {
     marginTop: 13,
     flexDirection: 'row',
@@ -952,27 +1124,27 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E1E6EB',
+    borderColor: '#DED8CB',
   },
   statValue: {
     marginTop: 8,
-    color: '#1F446A',
+    color: '#2F7353',
     fontSize: 24,
     fontWeight: '800',
   },
-  statLabel: { color: '#687786', fontSize: 11, fontWeight: '700' },
+  statLabel: { color: '#7A827A', fontSize: 11, fontWeight: '700' },
   section: {
     marginTop: 13,
     padding: 16,
     borderRadius: 20,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E1E6EB',
+    borderColor: '#DED8CB',
   },
-  sectionTitle: { color: '#1F446A', fontSize: 18, fontWeight: '800' },
+  sectionTitle: { color: '#2F7353', fontSize: 18, fontWeight: '800' },
   sectionText: {
     marginTop: 5,
-    color: '#687786',
+    color: '#7A827A',
     fontSize: 12,
     lineHeight: 18,
   },
@@ -984,9 +1156,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#EAF1F7',
+    backgroundColor: '#E6EFE6',
   },
-  secondaryButtonText: { color: '#224D78', fontSize: 13, fontWeight: '800' },
+  secondaryButtonText: { color: '#1D5F4A', fontSize: 13, fontWeight: '800' },
   providerCard: {
     minHeight: 122,
     marginTop: 12,
@@ -995,9 +1167,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#F8F9FA',
     borderWidth: 1,
-    borderColor: '#E1E6EB',
+    borderColor: '#DED8CB',
   },
-  providerCover: { width: 56, height: 56, borderRadius: 14, backgroundColor: '#DDE5EC' },
+  providerCover: { width: 56, height: 56, borderRadius: 14, backgroundColor: '#DED8CB' },
   providerInfo: { flex: 1, marginLeft: 11 },
   providerHeader: {
     flexDirection: 'row',
@@ -1006,7 +1178,7 @@ const styles = StyleSheet.create({
   },
   providerName: {
     flex: 1,
-    color: '#243F59',
+    color: '#34443D',
     fontSize: 14,
     fontWeight: '800',
   },
@@ -1015,20 +1187,20 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 9,
     overflow: 'hidden',
-    color: '#285B87',
+    color: '#2F7353',
     backgroundColor: '#EDF3F7',
     fontSize: 9,
     fontWeight: '800',
   },
-  pendingBadge: { color: '#8B6421', backgroundColor: '#F6EFE3' },
+  pendingBadge: { color: '#8A5A37', backgroundColor: '#F6EFE3' },
   pausedBadge: { color: '#8A4B45', backgroundColor: '#F8E8E5' },
   providerService: {
     marginTop: 4,
-    color: '#687786',
+    color: '#7A827A',
     fontSize: 12,
     fontWeight: '600',
   },
-  providerMeta: { marginTop: 4, color: '#87929E', fontSize: 11 },
+  providerMeta: { marginTop: 4, color: '#8A9288', fontSize: 11 },
   actions: { marginTop: 10, flexDirection: 'row', gap: 8 },
   simpleRow: {
     minHeight: 70,
@@ -1040,11 +1212,11 @@ const styles = StyleSheet.create({
     gap: 10,
     backgroundColor: '#F8F9FA',
     borderWidth: 1,
-    borderColor: '#E1E6EB',
+    borderColor: '#DED8CB',
   },
   simpleInfo: { flex: 1 },
-  simpleTitle: { color: '#243F59', fontSize: 13, fontWeight: '800' },
-  simpleText: { marginTop: 3, color: '#687786', fontSize: 11, lineHeight: 15 },
+  simpleTitle: { color: '#34443D', fontSize: 13, fontWeight: '800' },
+  simpleText: { marginTop: 3, color: '#7A827A', fontSize: 11, lineHeight: 15 },
   userRow: {
     minHeight: 78,
     marginTop: 10,
@@ -1055,7 +1227,7 @@ const styles = StyleSheet.create({
     gap: 10,
     backgroundColor: '#F8F9FA',
     borderWidth: 1,
-    borderColor: '#E1E6EB',
+    borderColor: '#DED8CB',
   },
   userIcon: {
     width: 40,
@@ -1063,21 +1235,15 @@ const styles = StyleSheet.create({
     borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#EAF1F7',
+    backgroundColor: '#E6EFE6',
   },
   userInfo: { flex: 1 },
-  userCredential: {
-    marginTop: 4,
-    color: '#8B6421',
-    fontSize: 10,
-    fontWeight: '800',
-  },
   userStatus: {
     paddingHorizontal: 8,
     paddingVertical: 5,
     borderRadius: 9,
     overflow: 'hidden',
-    color: '#8B6421',
+    color: '#8A5A37',
     backgroundColor: '#F6EFE3',
     fontSize: 9,
     fontWeight: '800',
@@ -1091,19 +1257,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#F8F9FA',
     borderWidth: 1,
-    borderColor: '#E1E6EB',
+    borderColor: '#DED8CB',
   },
-  emptyAdminText: { marginTop: 7, color: '#687786', fontSize: 12, fontWeight: '700' },
+  emptyAdminText: { marginTop: 7, color: '#7A827A', fontSize: 12, fontWeight: '700' },
   requestRow: {
     marginTop: 10,
     padding: 12,
     borderRadius: 16,
     backgroundColor: '#F8F9FA',
     borderWidth: 1,
-    borderColor: '#E1E6EB',
+    borderColor: '#DED8CB',
   },
   requestInfo: { minWidth: 0 },
-  requestDetail: { marginTop: 6, color: '#33485D', fontSize: 12, lineHeight: 17 },
+  requestDetail: { marginTop: 6, color: '#34443D', fontSize: 12, lineHeight: 17 },
   statusActions: { marginTop: 10, flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   statusChip: {
     minHeight: 32,
@@ -1113,10 +1279,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DDE5EC',
+    borderColor: '#DED8CB',
   },
-  statusChipActive: { backgroundColor: '#224D78', borderColor: '#224D78' },
-  statusChipText: { color: '#536678', fontSize: 10, fontWeight: '800' },
+  statusChipActive: { backgroundColor: '#1D5F4A', borderColor: '#1D5F4A' },
+  statusChipText: { color: '#68736B', fontSize: 10, fontWeight: '800' },
   statusChipTextActive: { color: '#FFFFFF' },
   actionButton: {
     minHeight: 34,
@@ -1126,16 +1292,58 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DDE5EC',
+    borderColor: '#DED8CB',
   },
-  actionText: { color: '#224D78', fontSize: 11, fontWeight: '800' },
+  actionText: { color: '#1D5F4A', fontSize: 11, fontWeight: '800' },
   editPanel: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#DDE5EC',
+    borderTopColor: '#DED8CB',
   },
-  editCover: { width: '100%', height: 118, borderRadius: 15, backgroundColor: '#DDE5EC' },
+  fieldLabel: {
+    marginTop: 13,
+    marginBottom: 7,
+    color: '#68736B',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+  },
+  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  optionChip: {
+    minHeight: 32,
+    paddingHorizontal: 11,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F1F4F6',
+    borderWidth: 1,
+    borderColor: '#DED8CB',
+  },
+  optionChipActive: { backgroundColor: '#1D5F4A', borderColor: '#1D5F4A' },
+  optionChipText: { color: '#68736B', fontSize: 11, fontWeight: '700' },
+  optionChipTextActive: { color: '#FFFFFF' },
+  imageGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  imageTile: {
+    width: 82,
+    height: 64,
+    borderRadius: 13,
+    overflow: 'hidden',
+    backgroundColor: '#DED8CB',
+  },
+  imageTileImage: { width: '100%', height: '100%' },
+  imageRemove: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(24,54,83,0.72)',
+  },
   editActions: { marginTop: 10, flexDirection: 'row' },
   imageButton: {
     minHeight: 40,
@@ -1144,18 +1352,108 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
-    backgroundColor: '#EAF1F7',
+    backgroundColor: '#E6EFE6',
   },
-  imageButtonText: { color: '#224D78', fontSize: 12, fontWeight: '800' },
+  imageButtonText: { color: '#1D5F4A', fontSize: 12, fontWeight: '800' },
+  categoryRow: {
+    minHeight: 74,
+    marginTop: 10,
+    padding: 11,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#DED8CB',
+  },
+  categoryIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryInfo: { flex: 1, minWidth: 0 },
+  categoryActions: { flexDirection: 'row', gap: 7 },
+  dangerText: { color: '#B3473D', fontSize: 11, fontWeight: '800' },
+  formDivider: {
+    height: 1,
+    marginTop: 16,
+    marginBottom: 4,
+    backgroundColor: '#E6EBEF',
+  },
+  iconPicker: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  iconOption: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#DED8CB',
+  },
+  colorOption: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  colorOptionActive: { borderColor: '#1D5F4A' },
+  subheaderRow: {
+    marginTop: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  smallAddButton: {
+    minHeight: 32,
+    paddingHorizontal: 11,
+    borderRadius: 11,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#E6EFE6',
+  },
+  smallAddText: { color: '#1D5F4A', fontSize: 11, fontWeight: '800' },
+  subcategoryCard: {
+    marginTop: 9,
+    padding: 11,
+    borderRadius: 15,
+    backgroundColor: '#F8F9FA',
+    borderWidth: 1,
+    borderColor: '#DED8CB',
+  },
+  subcategoryInputs: { gap: 8 },
+  subcategoryFooter: {
+    marginTop: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  smallRemoveButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8E8E5',
+  },
+  hintText: { marginTop: 9, color: '#8A9288', fontSize: 11 },
   editInput: {
     minHeight: 46,
     marginTop: 9,
     paddingHorizontal: 12,
     borderRadius: 13,
-    color: '#1F446A',
+    color: '#2F7353',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DDE5EC',
+    borderColor: '#DED8CB',
     fontSize: 13,
     fontWeight: '500',
   },
@@ -1168,16 +1466,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DDE5EC',
+    borderColor: '#DED8CB',
   },
-  cancelButtonText: { color: '#536678', fontSize: 12, fontWeight: '800' },
+  cancelButtonText: { color: '#68736B', fontSize: 12, fontWeight: '800' },
   saveButton: {
     flex: 1,
     minHeight: 44,
     borderRadius: 13,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#224D78',
+    backgroundColor: '#1D5F4A',
   },
   saveButtonText: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
 });

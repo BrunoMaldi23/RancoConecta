@@ -2,74 +2,70 @@
 
 Proyecto: Ranco Conecta (`ranco-conecta.vercel.app` / App React Native)
 
-Modelo de negocio: B2G2C (Business-to-Government-to-Consumer) / Permiso Digital Municipal
+Modelo de negocio: producto SaaS local con membresias para comercios y prestadores.
 
 ## 1. Vision general del proyecto
 
-Ranco Conecta no es solo un directorio comercial privado, sino la plataforma y vitrina digital oficial de la Municipalidad de Lago Ranco.
+Ranco Conecta es un directorio privado de oficios, comercios y servicios del Lago Ranco.
 
-Cliente principal (B2G): la Municipalidad financia la plataforma mediante un contrato de software, licencia, desarrollo y mantencion.
+La propuesta se vende como producto de membresia: los prestadores pagan para tener presencia digital, administrar su ficha, aparecer en busquedas y optar a planes destacados.
 
-Monetizacion municipal (B2C): vecinos, comercios, prestadores de servicios y operadores turisticos adquieren un permiso o derecho de presencia digital directamente con el Municipio para aparecer o destacarse en la app.
+## 2. Flujo de usuarios
 
-## 2. Flujo de usuarios y permisos
-
-El backend y la navegacion de React Native deben gestionar 3 roles principales.
+El frontend y backend gestionan tres perfiles principales.
 
 ## Usuario invitado / vecino / turista
 
 Acceso: modo invitado directo a Home, sin friccion de registro inicial.
 
-Capacidades: consultar catalogo, ver noticias y eventos municipales, buscar servicios y contactar comercios.
+Capacidades: consultar rubros, buscar servicios, revisar prestadores, guardar favoritos y contactar comercios.
 
 ## Comercio / prestador de servicios
 
 Ejemplos: pyme local, fletes, turismo, servicios domiciliarios y comercio establecido.
 
-Registro: solicitud de perfil de negocio desde la app.
+Registro: solicitud de perfil desde la app o alta interna desde el panel.
 
-Estado inicial: `PENDING_MUNICIPAL_APPROVAL`. La ficha no debe ser visible publicamente hasta la validacion de pago o permiso municipal.
+Estado inicial: `PENDING_MUNICIPAL_APPROVAL`. La ficha no debe ser visible publicamente hasta activar la membresia.
 
-Estado activado: `ACTIVE_COMMERCE`, tras validacion municipal.
+Estado activado: `ACTIVE_COMMERCE`, tras revision interna y activacion del plan.
 
-Capacidades: administrar ficha comercial, publicar ofertas, catalogo e insignias de verificacion.
+Capacidades: administrar ficha, fotos, categoria, datos de contacto y estado de su plan.
 
-## Administrador municipal
+## Administrador interno
 
-Ejemplos de areas: DIDECO, Fomento Productivo, Turismo.
+Acceso: panel web admin.
 
-Acceso: panel web admin, idealmente dashboard dedicado.
-
-Capacidades: validar o rechazar solicitudes de espacio comercial, verificar pagos de derechos municipales, emitir notificaciones push comunitarias y ver analiticas de uso comunal.
+Capacidades: crear usuarios, revisar solicitudes, publicar o pausar fichas, destacar prestadores, administrar categorias y mantener el directorio.
 
 ## 3. Requerimientos clave para la app React Native
 
 Autenticacion hibrida y condicional:
 
 - Permitir navegacion anonima en Home.
-- Mostrar interceptores o modales de autenticacion solo al intentar realizar acciones de registro de negocio, guardado de favoritos o gestion de perfil.
+- Mostrar login solo al intentar gestionar una ficha, guardar favoritos o entrar a perfil.
 
 Ciclo de vida de fichas comerciales:
 
-- Implementar indicador de estado en el perfil del comercio: "Esperando validacion de Pago de Permiso Municipal".
-- Incorporar sistema de etiquetas y prioridad en Home para destacar comercios con permiso VIP/PRO respecto a fichas gratuitas o basicas.
+- Mostrar el estado del plan: pendiente, activo o pausado.
+- Priorizar prestadores con plan destacado.
 
 Integracion y redireccion:
 
-- Incluir enlace o WebView hacia el portal de pagos de la Municipalidad/Tesoreria para que el comerciante pueda tramitar su permiso digital directamente.
+- Enlace configurable de pago o contacto para coordinar membresia (`EXPO_PUBLIC_MEMBERSHIP_URL` o canales de soporte).
 
 ## 4. Propuesta de valor comercial
 
-Para la Municipalidad: modernizacion digital de la comuna sin costo de infraestructura interna, aumento de recaudacion por derechos o permisos digitales y formalizacion del comercio local.
+Para vecinos y turistas: encontrar rapido prestadores locales confiables.
 
-Para los comerciantes: espacio de difusion oficial, economico y respaldado por la municipalidad, generando mayor confianza en turistas y vecinos.
+Para comerciantes: vitrina clara, facil de compartir y con presencia organizada por rubro.
 
-Para el equipo desarrollador: contrato recurrente de mantencion y soporte con la municipalidad bajo modelo SaaS/B2G, delegando la gestion de cobranza individual al aparato municipal.
+Para Ranco Conecta: ingreso recurrente por membresias, planes destacados y mantencion del directorio.
 
 ## 5. Implicancias de implementacion
 
-- La Home debe sentirse como entrada publica oficial: busqueda, rubros, noticias/eventos municipales y acceso claro para solicitar presencia digital.
-- El registro de prestadores no debe crear visibilidad inmediata; debe generar una solicitud revisable por el municipio.
-- El panel admin debe ser tratado como producto principal B2G, no como pantalla secundaria del prototipo.
-- Las entidades de negocio deberian contemplar estados, nivel de permiso, fecha de vigencia, comprobante o referencia de pago, responsable municipal y trazabilidad de aprobacion.
-- La comunicacion visual debe reforzar confianza institucional sin perder cercania local.
+- La Home debe sentirse como entrada publica de busqueda, no como portal institucional.
+- El registro de prestadores no crea visibilidad inmediata; genera una solicitud revisable.
+- El panel admin es operacion interna del producto.
+- Las entidades de negocio contemplan estado, plan, vigencia futura, comprobante o referencia de pago y trazabilidad de activacion.
+- La comunicacion visual debe reforzar confianza local, cercania y simpleza.

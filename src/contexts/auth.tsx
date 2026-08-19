@@ -1,9 +1,12 @@
 import type { ReactNode } from 'react';
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 
-import { isFirebaseConfigured } from '../lib/firebase-config';
+import { firebaseAuth, isFirebaseConfigured } from '../lib/firebase';
 
 export type UserRole = 'guest' | 'commerce' | 'municipal_admin';
+
+export type UserStatus = 'ACTIVE_COMMERCE' | 'PENDING_MUNICIPAL_APPROVAL' | 'MUNICIPAL_ADMIN';
 
 export type AuthUser = {
   id: string;
@@ -13,11 +16,11 @@ export type AuthUser = {
 };
 
 export type ManagedUser = AuthUser & {
-  password: string;
-  status: 'ACTIVE_COMMERCE' | 'PENDING_MUNICIPAL_APPROVAL' | 'MUNICIPAL_ADMIN';
+  status: UserStatus;
   businessName?: string;
   serviceName?: string;
   phone?: string;
+  favoriteIds?: string[];
 };
 
 type LoginPayload = {
@@ -35,90 +38,191 @@ type CreateCommerceUserPayload = {
   phone: string;
 };
 
+type UpdateOwnProfilePayload = {
+  businessName?: string;
+  serviceName?: string;
+  phone?: string;
+};
+
 type AuthContextValue = {
   user: AuthUser | null;
+  profile: ManagedUser | null;
   managedUsers: ManagedUser[];
+  authReady: boolean;
   login: (payload: LoginPayload) => Promise<{ ok: true } | { ok: false; message: string }>;
   createCommerceUser: (
     payload: CreateCommerceUserPayload,
   ) => Promise<{ ok: true; user: ManagedUser } | { ok: false; message: string }>;
+  updateOwnProfile: (payload: UpdateOwnProfilePayload) => Promise<void>;
+  refreshProfile: () => Promise<void>;
   logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const INITIAL_USERS: ManagedUser[] = [
-  {
-    id: 'municipal_admin-admin@lagoranco.cl',
-    name: 'Administrador municipal',
-    email: 'admin@lagoranco.cl',
-    password: 'ranco-admin',
-    role: 'municipal_admin',
-    status: 'MUNICIPAL_ADMIN',
-  },
-  {
-    id: 'commerce-comercio@demo.cl',
-    name: 'Comercio local',
-    email: 'comercio@demo.cl',
-    password: 'comercio-demo',
-    role: 'commerce',
-    status: 'PENDING_MUNICIPAL_APPROVAL',
-    businessName: 'Comercio local',
-    serviceName: 'Ficha de prueba',
-    phone: '+56987654321',
-  },
-];
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [managedUsers, setManagedUsers] = useState<ManagedUser[]>(INITIAL_USERS);
+  const [profile, setProfile] = useState<ManagedUser | null>(null);
+  const [managedUsers, setManagedUsers] = useState<ManagedUser[]>([]);
+  const [authReady, setAuthReady] = useState(() => !firebaseAuth);
+
+  useEffect(() => {
+    if (!firebaseAuth) {
+      return;
+    }
+
+    let mounted = true;
+
+    const unsubscribe = onAuthStateChanged(firebaseAuth, async (firebaseUser) => {
+      if (!mounted) {
+        return;
+      }
+
+      if (!firebaseUser) {
+        setUser(null);
+        setProfile(null);
+        setAuthReady(true);
+        return;
+      }
+
+      try {
+        const { fetchUserById } = await import('../services/firebase-users');
+        const documentUser = await fetchUserById(firebaseUser.uid);
+
+        if (!mounted) {
+          return;
+        }
+
+        if (documentUser) {
+          setUser({
+            id: firebaseUser.uid,
+            name: documentUser.name,
+            email: documentUser.email,
+            role: documentUser.role,
+          });
+          setProfile(documentUser);
+        } else {
+          setUser(null);
+          setProfile(null);
+        }
+      } catch {
+        if (mounted) {
+          setUser(null);
+          setProfile(null);
+        }
+      } finally {
+        if (mounted) {
+          setAuthReady(true);
+        }
+      }
+    });
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isFirebaseConfigured || user?.role !== 'municipal_admin') {
+      return;
+    }
+
+    let mounted = true;
+    let unsubscribe: (() => void) | undefined;
+
+    import('../services/firebase-users')
+      .then(({ observeUsers }) => {
+        if (!mounted) {
+          return;
+        }
+
+        unsubscribe = observeUsers(
+          (users) => {
+            if (mounted) {
+              setManagedUsers(users);
+            }
+          },
+          () => undefined,
+        );
+      })
+      .catch(() => undefined);
+
+    return () => {
+      mounted = false;
+      setManagedUsers([]);
+      unsubscribe?.();
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!isFirebaseConfigured || !user) {
+      return;
+    }
+
+    let mounted = true;
+    let unsubscribe: (() => void) | undefined;
+
+    import('../services/firebase-users')
+      .then(({ observeUserDoc }) => {
+        if (!mounted) {
+          return;
+        }
+
+        unsubscribe = observeUserDoc(
+          user.id,
+          (documentUser) => {
+            if (mounted && documentUser) {
+              setProfile(documentUser);
+            }
+          },
+          () => undefined,
+        );
+      })
+      .catch(() => undefined);
+
+    return () => {
+      mounted = false;
+      unsubscribe?.();
+    };
+  }, [user]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
+      profile,
       managedUsers,
+      authReady,
       login: async ({ email, password, role }) => {
         const normalizedEmail = email.trim().toLowerCase();
 
-        if (!normalizedEmail) {
-          return { ok: false, message: 'Ingresa un correo para continuar.' };
+        if (!normalizedEmail || !password.trim()) {
+          return { ok: false, message: 'Ingresa tu correo y contraseña para continuar.' };
         }
 
-        if (isFirebaseConfigured) {
-          try {
-            const { signInUser } = await import('../services/firebase-users');
-            const firebaseUser = await signInUser(normalizedEmail, password);
+        if (!isFirebaseConfigured) {
+          return {
+            ok: false,
+            message: 'Firebase no está configurado. Revisa las variables de entorno.',
+          };
+        }
 
-            if (firebaseUser.role !== role) {
-              return { ok: false, message: 'Este usuario no tiene acceso a ese perfil.' };
-            }
+        try {
+          const { signInUser } = await import('../services/firebase-users');
+          const firebaseUser = await signInUser(normalizedEmail, password);
 
-            setUser(firebaseUser);
-            return { ok: true };
-          } catch (error) {
-            return {
-              ok: false,
-              message: error instanceof Error ? error.message : 'No se pudo iniciar sesión con Firebase.',
-            };
+          if (firebaseUser.role !== role) {
+            return { ok: false, message: 'Este usuario no tiene acceso a ese perfil.' };
           }
+
+          setUser(firebaseUser);
+          return { ok: true };
+        } catch (error) {
+          return {
+            ok: false,
+            message: error instanceof Error ? error.message : 'No se pudo iniciar sesión.',
+          };
         }
-
-        const matchedUser = managedUsers.find(
-          (item) => item.email === normalizedEmail && item.role === role,
-        );
-
-        if (!matchedUser || password.trim() !== matchedUser.password) {
-          return { ok: false, message: 'Revisa la clave e intenta nuevamente.' };
-        }
-
-        setUser({
-          id: matchedUser.id,
-          name: matchedUser.name,
-          email: matchedUser.email,
-          role: matchedUser.role,
-        });
-
-        return { ok: true };
       },
       createCommerceUser: async ({
         name,
@@ -141,35 +245,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return { ok: false, message: 'Completa todos los datos del usuario.' };
         }
 
-        if (managedUsers.some((item) => item.email === normalizedEmail)) {
-          return { ok: false, message: 'Ya existe un usuario con ese correo.' };
+        if (!isFirebaseConfigured) {
+          return {
+            ok: false,
+            message: 'Firebase no está configurado. Revisa las variables de entorno.',
+          };
         }
 
-        const nextUser = isFirebaseConfigured
-          ? await import('../services/firebase-users').then(({ createCommerceAccount }) =>
-              createCommerceAccount({
-                name: name.trim(),
-                email: normalizedEmail,
-                password: password.trim(),
-                businessName: businessName.trim(),
-                serviceName: serviceName.trim(),
-                phone: phone.trim(),
-              }),
-            )
-          : {
-              id: `commerce-${normalizedEmail}`,
-              name: name.trim(),
-              email: normalizedEmail,
-              password: password.trim(),
-              role: 'commerce',
-              status: 'PENDING_MUNICIPAL_APPROVAL',
-              businessName: businessName.trim(),
-              serviceName: serviceName.trim(),
-              phone: phone.trim(),
-            } satisfies ManagedUser;
+        try {
+          const { createCommerceAccount } = await import('../services/firebase-users');
+          const nextUser = await createCommerceAccount({
+            name: name.trim(),
+            email: normalizedEmail,
+            password: password.trim(),
+            businessName: businessName.trim(),
+            serviceName: serviceName.trim(),
+            phone: phone.trim(),
+          });
 
-        setManagedUsers((current) => [nextUser, ...current]);
-        return { ok: true, user: nextUser };
+          return { ok: true, user: nextUser };
+        } catch (error) {
+          return {
+            ok: false,
+            message: error instanceof Error ? error.message : 'No se pudo crear el usuario.',
+          };
+        }
+      },
+      updateOwnProfile: async ({ businessName, serviceName, phone }) => {
+        if (!user || !isFirebaseConfigured) {
+          return;
+        }
+
+        const { updateUserById } = await import('../services/firebase-users');
+        await updateUserById(user.id, {
+          businessName,
+          serviceName,
+          phone,
+        });
+      },
+      refreshProfile: async () => {
+        if (!firebaseAuth?.currentUser) {
+          return;
+        }
+
+        const { fetchUserById } = await import('../services/firebase-users');
+        const documentUser = await fetchUserById(firebaseAuth.currentUser.uid);
+
+        if (documentUser) {
+          setUser({
+            id: firebaseAuth.currentUser.uid,
+            name: documentUser.name,
+            email: documentUser.email,
+            role: documentUser.role,
+          });
+          setProfile(documentUser);
+        }
       },
       logout: async () => {
         if (isFirebaseConfigured) {
@@ -178,9 +308,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         setUser(null);
+        setProfile(null);
+        setManagedUsers([]);
       },
     }),
-    [managedUsers, user],
+    [authReady, managedUsers, profile, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -18,29 +18,93 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
-      allow create, update, delete: if isAdmin();
+      allow create: if signedIn() && (
+        isAdmin() ||
+        (
+          request.auth.uid == userId &&
+          request.resource.data.role == 'commerce' &&
+          request.resource.data.status == 'PENDING_MUNICIPAL_APPROVAL'
+        )
+      );
+      allow update: if signedIn() && (
+        isAdmin() ||
+        (
+          request.auth.uid == userId &&
+          request.resource.data.role == resource.data.role &&
+          request.resource.data.status == resource.data.status
+        )
+      );
+      allow delete: if isAdmin();
     }
 
     match /providers/{providerId} {
       allow read: if resource.data.publicationStatus == 'Publicado' || isAdmin();
+      allow create: if isAdmin() || (
+        signedIn() &&
+        request.resource.data.ownerId == request.auth.uid &&
+        request.resource.data.publicationStatus == 'Pendiente' &&
+        request.resource.data.plan == 'Base'
+      );
+      allow update: if isAdmin() || (
+        signedIn() &&
+        resource.data.ownerId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'name', 'service', 'phone', 'whatsapp', 'images', 'categoryId',
+          'subcategoryId', 'coverage', 'description', 'updatedAt'
+        ])
+      ) || (
+        signedIn() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'rating', 'reviews', 'ratingSum', 'updatedAt'
+        ])
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
       allow create, update, delete: if isAdmin();
     }
 
     match /requests/{requestId} {
-      allow create: if true;
-      allow read, update: if signedIn() && isAdmin();
-      allow delete: if isAdmin();
-    }
-
-    match /ratings/{ratingId} {
-      allow create: if true;
-      allow read: if true;
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if signedIn() && (
+        resource.data.userId == request.auth.uid || isAdmin()
+      );
       allow update, delete: if isAdmin();
     }
 
+    match /ratings/{ratingId} {
+      allow read: if true;
+      allow create, update: if signedIn() &&
+        ratingId == request.auth.uid + '_' + request.resource.data.providerId &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.rating is number &&
+        request.resource.data.rating >= 1 &&
+        request.resource.data.rating <= 5;
+      allow delete: if isAdmin();
+    }
+
     match /recommendations/{recommendationId} {
-      allow create: if true;
-      allow read, update, delete: if isAdmin();
+      allow read: if true;
+      allow create, update: if signedIn() &&
+        recommendationId == request.auth.uid + '_' + request.resource.data.providerId &&
+        request.resource.data.userId == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    // Pagos de membresía: el cliente solo lee sus propios pagos.
+    // La creación/actualización ocurre únicamente vía Firebase Admin (Functions).
+    match /payments/{paymentId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
+    // Membresías: el cliente solo lee su propia membresía.
+    // La activación ocurre únicamente vía Firebase Admin (Functions).
+    match /memberships/{userId} {
+      allow read: if signedIn() && userId == request.auth.uid;
+      allow create, update, delete: if false;
     }
   }
 }

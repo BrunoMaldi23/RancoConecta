@@ -6,22 +6,26 @@ import { useState } from 'react';
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useAppData } from '../contexts/app-data';
+import { useAuth } from '../contexts/auth';
+import { safeGoBack } from '../lib/navigation';
 
 const DATE_OPTIONS = ['Lo antes posible', 'Esta semana', 'Coordinar con el prestador'];
 
 export default function RequestService() {
   const params = useLocalSearchParams<{ providerId?: string; providerName?: string; serviceName?: string }>();
   const { createRequest } = useAppData();
+  const { user } = useAuth();
   const [address, setAddress] = useState('');
   const [detail, setDetail] = useState('');
   const [dateOption, setDateOption] = useState(DATE_OPTIONS[0]);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const pickPhotos = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
-      Alert.alert('Permiso requerido', 'Necesitamos permiso para adjuntar fotografías desde tu galería.');
+      Alert.alert('Acceso requerido', 'Necesitamos acceso a tu galería para adjuntar fotografías.');
       return;
     }
 
@@ -41,29 +45,55 @@ export default function RequestService() {
     setPhotos((current) => current.filter((item) => item !== uri));
   };
 
-  const send = () => {
+  const send = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
     if (!address.trim() || !detail.trim()) {
       Alert.alert('Faltan datos', 'Ingresa el sector y describe lo que necesitas.');
       return;
     }
 
-    createRequest({
-      providerId: String(params.providerId || ''),
-      providerName: String(params.providerName || 'Prestador'),
-      serviceName: String(params.serviceName || 'Servicio local'),
-      address: address.trim(),
-      detail: detail.trim(),
-      dateOption,
-      photos,
-    });
+    if (!user) {
+      const returnTo = `/request-service?providerId=${encodeURIComponent(
+        String(params.providerId || ''),
+      )}&providerName=${encodeURIComponent(
+        String(params.providerName || ''),
+      )}&serviceName=${encodeURIComponent(String(params.serviceName || ''))}`;
 
-    Alert.alert(
-      'Solicitud enviada',
-      photos.length > 0
-        ? `Se envió la solicitud con ${photos.length} fotografía(s) adjunta(s).`
-        : 'Se envió la solicitud sin fotografías adjuntas.',
-      [{ text: 'Aceptar', onPress: () => router.replace('/contacts') }],
-    );
+      router.push({ pathname: '/', params: { returnTo } });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await createRequest({
+        providerId: String(params.providerId || ''),
+        providerName: String(params.providerName || 'Prestador'),
+        serviceName: String(params.serviceName || 'Servicio local'),
+        address: address.trim(),
+        detail: detail.trim(),
+        dateOption,
+        photos,
+      });
+
+      Alert.alert(
+        'Solicitud enviada',
+        photos.length > 0
+          ? `Se envió la solicitud con ${photos.length} fotografía(s) adjunta(s).`
+          : 'Se envió la solicitud sin fotografías adjuntas.',
+        [{ text: 'Aceptar', onPress: () => router.replace('/contacts') }],
+      );
+    } catch (error) {
+      Alert.alert(
+        'No se pudo enviar',
+        error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -91,7 +121,7 @@ export default function RequestService() {
             value={address}
             onChangeText={setAddress}
             placeholder="Ej: Futrono, sector urbano"
-            placeholderTextColor="#87929E"
+            placeholderTextColor="#8A9288"
             style={styles.input}
           />
         </View>
@@ -110,7 +140,7 @@ export default function RequestService() {
             value={detail}
             onChangeText={setDetail}
             placeholder="Describe el trabajo con el mayor detalle posible"
-            placeholderTextColor="#87929E"
+            placeholderTextColor="#8A9288"
             multiline
             style={[styles.input, styles.area]}
           />
@@ -148,7 +178,7 @@ export default function RequestService() {
         <View style={styles.stepCard}>
           <View style={styles.stepHeader}>
             <View style={[styles.stepBadge, styles.optionalBadge]}>
-              <Ionicons name="camera-outline" size={15} color="#224D78" />
+              <Ionicons name="camera-outline" size={15} color="#1D5F4A" />
             </View>
             <View style={styles.stepCopy}>
               <Text style={styles.stepTitle}>Fotografías</Text>
@@ -156,7 +186,7 @@ export default function RequestService() {
             </View>
           </View>
           <Pressable onPress={pickPhotos} style={styles.attach}>
-            <Ionicons name="camera-outline" size={21} color="#224D78" />
+            <Ionicons name="camera-outline" size={21} color="#1D5F4A" />
             <Text style={styles.attachText}>
               {photos.length > 0 ? `Agregar más (${photos.length}/4)` : 'Agregar fotografías'}
             </Text>
@@ -176,8 +206,8 @@ export default function RequestService() {
           )}
         </View>
 
-        <Pressable onPress={send} style={styles.send}>
-          <Text style={styles.sendText}>Enviar solicitud</Text>
+        <Pressable onPress={send} disabled={isSubmitting} style={styles.send}>
+          <Text style={styles.sendText}>{isSubmitting ? 'Enviando…' : 'Enviar solicitud'}</Text>
           <Ionicons name="send" size={18} color="#FFFFFF" />
         </Pressable>
       </ScrollView>
@@ -188,48 +218,48 @@ export default function RequestService() {
 function Header({ title }: { title: string }) {
   return (
     <View style={styles.bar}>
-      <Pressable onPress={() => router.back()} style={styles.back}>
-        <Ionicons name="arrow-back" size={23} color="#1F446A" />
+      <Pressable onPress={() => safeGoBack('/home')} style={styles.back}>
+        <Ionicons name="arrow-back" size={23} color="#2F7353" />
       </Pressable>
       <Text style={styles.barTitle}>{title}</Text>
       <Pressable onPress={() => router.replace('/home')} style={styles.back}>
-        <Ionicons name="home-outline" size={21} color="#224D78" />
+        <Ionicons name="home-outline" size={21} color="#1D5F4A" />
       </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F7F8F4' },
+  safe: { flex: 1, backgroundColor: '#F3ECDD' },
   content: { width: '100%', maxWidth: 680, alignSelf: 'center', padding: 16, paddingBottom: 40 },
   bar: { height: 64, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  back: { width: 43, height: 43, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E1E6EB' },
-  barTitle: { fontSize: 16, fontWeight: '700', color: '#1F446A' },
-  summaryLine: { paddingTop: 4, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: '#E1E6EB' },
+  back: { width: 43, height: 43, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
+  barTitle: { fontSize: 16, fontWeight: '700', color: '#2F7353' },
+  summaryLine: { paddingTop: 4, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: '#DED8CB' },
   eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8, color: '#B97012', textTransform: 'uppercase' },
-  title: { fontSize: 22, lineHeight: 27, fontWeight: '700', color: '#1F446A', marginTop: 5 },
-  light: { fontSize: 13, color: '#687786', marginTop: 4 },
-  stepCard: { marginTop: 13, padding: 14, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E1E6EB' },
+  title: { fontSize: 22, lineHeight: 27, fontWeight: '700', color: '#2F7353', marginTop: 5 },
+  light: { fontSize: 13, color: '#7A827A', marginTop: 4 },
+  stepCard: { marginTop: 13, padding: 14, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
   stepHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  stepBadge: { width: 30, height: 30, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: '#224D78' },
-  optionalBadge: { backgroundColor: '#EAF1F7' },
+  stepBadge: { width: 30, height: 30, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1D5F4A' },
+  optionalBadge: { backgroundColor: '#E6EFE6' },
   stepBadgeText: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
   stepCopy: { flex: 1, minWidth: 0, marginLeft: 10 },
-  stepTitle: { color: '#1F446A', fontSize: 15, fontWeight: '700' },
-  stepHint: { marginTop: 3, color: '#687786', fontSize: 11, lineHeight: 15 },
-  input: { minHeight: 52, paddingHorizontal: 14, borderRadius: 15, backgroundColor: '#FDFEFE', borderWidth: 1, borderColor: '#DDE5EC', fontSize: 14, color: '#243F59' },
+  stepTitle: { color: '#2F7353', fontSize: 15, fontWeight: '700' },
+  stepHint: { marginTop: 3, color: '#7A827A', fontSize: 11, lineHeight: 15 },
+  input: { minHeight: 52, paddingHorizontal: 14, borderRadius: 15, backgroundColor: '#FDFEFE', borderWidth: 1, borderColor: '#DED8CB', fontSize: 14, color: '#34443D' },
   area: { height: 116, paddingTop: 14, textAlignVertical: 'top' },
   dateOptions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  dateChip: { minHeight: 38, paddingHorizontal: 12, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F7F8F4', borderWidth: 1, borderColor: '#DDE5EC' },
-  dateChipActive: { backgroundColor: '#224D78', borderColor: '#224D78' },
+  dateChip: { minHeight: 38, paddingHorizontal: 12, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3ECDD', borderWidth: 1, borderColor: '#DED8CB' },
+  dateChipActive: { backgroundColor: '#1D5F4A', borderColor: '#1D5F4A' },
   dateChipText: { color: '#42586C', fontSize: 12, fontWeight: '700' },
   dateChipTextActive: { color: '#FFFFFF' },
-  attach: { height: 48, borderRadius: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#EAF1F7' },
-  attachText: { fontSize: 13, fontWeight: '700', color: '#224D78' },
+  attach: { height: 48, borderRadius: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#E6EFE6' },
+  attachText: { fontSize: 13, fontWeight: '700', color: '#1D5F4A' },
   photoGrid: { marginTop: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  photoItem: { width: 78, height: 78, borderRadius: 16, overflow: 'hidden', backgroundColor: '#DDE5EC' },
+  photoItem: { width: 78, height: 78, borderRadius: 16, overflow: 'hidden', backgroundColor: '#DED8CB' },
   photo: { width: '100%', height: '100%' },
   removePhoto: { position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(24,54,83,0.82)' },
-  send: { height: 56, marginTop: 16, borderRadius: 17, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, backgroundColor: '#D89222' },
+  send: { height: 56, marginTop: 16, borderRadius: 17, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, backgroundColor: '#BF6842' },
   sendText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
 });

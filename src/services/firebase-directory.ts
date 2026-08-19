@@ -3,13 +3,17 @@ import {
   collection,
   doc,
   getDocs,
+  onSnapshot,
   orderBy,
   query,
+  runTransaction,
   setDoc,
   updateDoc,
+  where,
 } from 'firebase/firestore';
 
 import type {
+  CreateServiceRequestPayload,
   DirectoryProvider,
   ProviderPlan,
   ProviderPublicationStatus,
@@ -29,11 +33,57 @@ const requireFirestore = () => {
   return firestore;
 };
 
-export async function fetchProviders() {
+export function observeProviders(
+  onNext: (providers: DirectoryProvider[]) => void,
+  onError: (error: Error) => void,
+) {
   const db = requireFirestore();
-  const snapshot = await getDocs(query(collection(db, 'providers'), orderBy('name')));
+  const source = query(collection(db, 'providers'), orderBy('name'));
 
-  return snapshot.docs.map((item) => item.data() as DirectoryProvider);
+  return onSnapshot(
+    source,
+    (snapshot) => {
+      onNext(snapshot.docs.map((item) => item.data() as DirectoryProvider));
+    },
+    (error) => onError(error as Error),
+  );
+}
+
+export function observeRequests(
+  userId: string,
+  isAdminUser: boolean,
+  onNext: (requests: ServiceRequest[]) => void,
+  onError: (error: Error) => void,
+) {
+  const db = requireFirestore();
+  const source = isAdminUser
+    ? query(collection(db, 'requests'), orderBy('createdAt', 'desc'))
+    : query(collection(db, 'requests'), where('userId', '==', userId));
+
+  return onSnapshot(
+    source,
+    (snapshot) => {
+      const items = snapshot.docs.map((item) => item.data() as ServiceRequest);
+      onNext(
+        items.sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? '')),
+      );
+    },
+    (error) => onError(error as Error),
+  );
+}
+
+export async function createRequest(payload: CreateServiceRequestPayload & { userId: string }) {
+  const db = requireFirestore();
+  const data: ServiceRequestDocument = {
+    ...payload,
+    status: 'Enviada',
+    createdAt: now(),
+    updatedAt: now(),
+  };
+
+  const ref = await addDoc(collection(db, 'requests'), data);
+
+  return { id: ref.id, ...data } satisfies ServiceRequest;
 }
 
 export async function saveProvider(provider: DirectoryProvider) {
@@ -72,23 +122,6 @@ export async function updateProviderPlan(providerId: string, plan: ProviderPlan)
   await updateProviderFields(providerId, { plan });
 }
 
-export async function fetchRequests() {
-  const db = requireFirestore();
-  const snapshot = await getDocs(query(collection(db, 'requests'), orderBy('createdAt', 'desc')));
-
-  return snapshot.docs.map((item) => item.data() as ServiceRequest);
-}
-
-export async function saveRequest(request: ServiceRequest) {
-  const db = requireFirestore();
-  const payload: ServiceRequestDocument = {
-    ...request,
-    updatedAt: now(),
-  };
-
-  await setDoc(doc(db, 'requests', request.id), payload, { merge: true });
-}
-
 export async function updateRequestStatus(
   requestId: string,
   status: ServiceRequestStatus,
@@ -100,19 +133,51 @@ export async function updateRequestStatus(
   });
 }
 
-export async function saveRating(providerId: string, rating: number) {
+export async function saveRating(providerId: string, rating: number, userId: string) {
   const db = requireFirestore();
-  await addDoc(collection(db, 'ratings'), {
-    providerId,
-    rating,
-    createdAt: now(),
-  });
-}
+  const ratingId = `${userId}_${providerId}`;
+  const ratingsRef = collection(db, 'ratings');
+  const existing = await getDocs(query(ratingsRef, where('providerId', '==', providerId)));
 
-export async function saveRecommendation(providerId: string) {
-  const db = requireFirestore();
-  await addDoc(collection(db, 'recommendations'), {
-    providerId,
-    createdAt: now(),
+  let sum = 0;
+  let included = false;
+
+  existing.docs.forEach((item) => {
+    const value = item.data().rating ?? 0;
+
+    if (item.id === ratingId) {
+      sum += rating;
+      included = true;
+    } else {
+      sum += value;
+    }
+  });
+
+  if (!included) {
+    sum += rating;
+  }
+
+  const reviews = included ? existing.size : existing.size + 1;
+  const nextRating = reviews > 0 ? Math.round((sum / reviews) * 10) / 10 : 0;
+
+  await runTransaction(db, async (transaction) => {
+    transaction.set(
+      doc(db, 'ratings', ratingId),
+      {
+        providerId,
+        userId,
+        rating,
+        createdAt: now(),
+        updatedAt: now(),
+      },
+      { merge: true },
+    );
+
+    transaction.update(doc(db, 'providers', providerId), {
+      rating: nextRating,
+      reviews,
+      ratingSum: sum,
+      updatedAt: now(),
+    });
   });
 }

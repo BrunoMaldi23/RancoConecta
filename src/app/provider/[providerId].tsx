@@ -6,58 +6,119 @@ import { useState } from 'react';
 import { Alert, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
 import { useAppData } from '../../contexts/app-data';
+import { useAuth } from '../../contexts/auth';
+import { safeGoBack } from '../../lib/navigation';
 
 export default function ProviderProfile() {
   const { providerId } = useLocalSearchParams<{ providerId?: string }>();
   const { width } = useWindowDimensions();
-  const { getProvider, isFavorite, recommendProvider: saveRecommendation, rateProvider, toggleFavorite } = useAppData();
+  const { getProvider, isFavorite, providersStatus, rateProvider, toggleFavorite } = useAppData();
+  const { user } = useAuth();
   const provider = getProvider(String(providerId || ''));
+  const [warRating, setWarRating] = useState(5);
+  const isFavoriteId = provider ? isFavorite(provider.id) : false;
+  const [isSubmittingRating, setIsSubmittingRating] = useState(false);
+
+  if (providersStatus === 'loading') {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.content}>
+          <View style={styles.bar}>
+            <Pressable onPress={() => safeGoBack('/home')} style={styles.iconBtn}>
+              <Ionicons name="arrow-back" size={23} color="#2F7353" />
+            </Pressable>
+            <Text style={styles.barTitle}>Perfil del prestador</Text>
+            <Pressable onPress={() => router.replace('/home')} style={styles.iconBtn}>
+              <Ionicons name="home-outline" size={21} color="#1D5F4A" />
+            </Pressable>
+          </View>
+          <View style={styles.notFound}>
+            <Text style={styles.notFoundText}>Cargando perfil…</Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!provider) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.content}>
+          <View style={styles.bar}>
+            <Pressable onPress={() => safeGoBack('/home')} style={styles.iconBtn}>
+              <Ionicons name="arrow-back" size={23} color="#2F7353" />
+            </Pressable>
+            <Text style={styles.barTitle}>Perfil del prestador</Text>
+            <Pressable onPress={() => router.replace('/home')} style={styles.iconBtn}>
+              <Ionicons name="home-outline" size={21} color="#1D5F4A" />
+            </Pressable>
+          </View>
+          <View style={styles.notFound}>
+            <Ionicons name="alert-circle-outline" size={42} color="#9B9A90" />
+            <Text style={styles.notFoundTitle}>Prestador no encontrado</Text>
+            <Text style={styles.notFoundText}>
+              El perfil consultado ya no está disponible en el directorio.
+            </Text>
+            <Pressable onPress={() => router.replace('/home')} style={styles.notFoundButton}>
+              <Text style={styles.notFoundButtonText}>Volver al inicio</Text>
+            </Pressable>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   const hasGallery = provider.images.length > 1;
   const coverWidth = Math.min(width, 720) - 32;
-  const [recommendationRating, setRecommendationRating] = useState(5);
-  const [recommended, setRecommended] = useState(false);
-  const favorite = isFavorite(provider.id);
 
-  const callProvider = () => Linking.openURL(`tel:${provider.phone}`);
+  const callProvider = () =>
+    Linking.openURL(`tel:${provider.phone}`).catch(() => undefined);
   const openWhatsApp = () =>
     Linking.openURL(
       `https://wa.me/${provider.whatsapp}?text=${encodeURIComponent(
         `Hola, vi tu servicio en RancoConecta y quiero consultar por ${provider.service}.`,
       )}`,
-    );
+    ).catch(() => undefined);
 
-  const submitRating = () => {
-    rateProvider(provider.id, recommendationRating);
-    Alert.alert(
-      'Valoración enviada',
-      `Gracias. Registramos ${recommendationRating} estrellas para ${provider.name}.`,
-      [{ text: 'Aceptar', style: 'cancel' }],
-    );
-  };
+  const submitRating = async () => {
+    if (isSubmittingRating) {
+      return;
+    }
 
-  const recommendProvider = () => {
-    saveRecommendation(provider.id);
-    setRecommended(true);
-    Alert.alert(
-      'Recomendación registrada',
-      `Gracias. ${provider.name} quedó recomendado para revisión municipal.`,
-      [
-        { text: 'Ver destacados', onPress: () => router.push('/featured') },
-        { text: 'Aceptar', style: 'cancel' },
-      ],
-    );
+    if (!user) {
+      router.push({ pathname: '/', params: { returnTo: `/provider/${provider.id}` } });
+      return;
+    }
+
+    setIsSubmittingRating(true);
+
+    try {
+      await rateProvider(provider.id, warRating);
+      Alert.alert(
+        'Valoración enviada',
+        `Gracias. Registramos ${warRating} estrellas para ${provider.name}.`,
+        [{ text: 'Aceptar', style: 'cancel' }],
+      );
+    } catch (error) {
+      Alert.alert(
+        'No se pudo valorar',
+        error instanceof Error ? error.message : 'Ocurrió un error inesperado.',
+      );
+    } finally {
+      setIsSubmittingRating(false);
+    }
   };
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.bar}>
-          <Pressable onPress={() => router.back()} style={styles.iconBtn}>
-            <Ionicons name="arrow-back" size={23} color="#1F446A" />
+          <Pressable onPress={() => safeGoBack('/home')} style={styles.iconBtn}>
+            <Ionicons name="arrow-back" size={23} color="#2F7353" />
           </Pressable>
           <Text style={styles.barTitle}>Perfil del prestador</Text>
           <Pressable onPress={() => router.replace('/home')} style={styles.iconBtn}>
-            <Ionicons name="home-outline" size={21} color="#224D78" />
+            <Ionicons name="home-outline" size={21} color="#1D5F4A" />
           </Pressable>
         </View>
 
@@ -74,6 +135,11 @@ export default function ProviderProfile() {
             ))}
           </ScrollView>
           <View style={styles.coverShade} />
+          {provider.images.length === 0 && (
+            <View style={styles.coverPlaceholder}>
+              <Ionicons name="storefront-outline" size={44} color="rgba(255,255,255,0.85)" />
+            </View>
+          )}
           <View style={styles.coverCopy}>
             <Text numberOfLines={2} style={styles.name}>
               {provider.name}
@@ -85,14 +151,14 @@ export default function ProviderProfile() {
               {provider.verified && <Ionicons name="checkmark-circle" size={18} color="#CDE6F7" />}
             </View>
             <View style={styles.rating}>
-              <Ionicons name="star" size={16} color="#D89222" />
+              <Ionicons name="star" size={16} color="#BF6842" />
               <Text style={styles.ratingText}>{provider.rating}</Text>
               <Text style={styles.light}>({provider.reviews} opiniones)</Text>
             </View>
           </View>
           {hasGallery && (
             <View style={styles.galleryBadge}>
-              <Ionicons name="images-outline" size={15} color="#224D78" />
+              <Ionicons name="images-outline" size={15} color="#1D5F4A" />
               <Text style={styles.galleryBadgeText}>{provider.images.length}</Text>
             </View>
           )}
@@ -117,7 +183,7 @@ export default function ProviderProfile() {
 
         <View style={styles.actions}>
           <Pressable onPress={callProvider} style={styles.outline}>
-            <Ionicons name="call-outline" size={19} color="#224D78" />
+            <Ionicons name="call-outline" size={19} color="#1D5F4A" />
             <Text style={styles.outlineText}>Llamar</Text>
           </Pressable>
           <Pressable onPress={openWhatsApp} style={styles.primary}>
@@ -125,14 +191,14 @@ export default function ProviderProfile() {
             <Text style={styles.primaryText}>WhatsApp</Text>
           </Pressable>
           <Pressable onPress={() => toggleFavorite(provider.id)} style={styles.favoriteButton}>
-            <Ionicons name={favorite ? 'heart' : 'heart-outline'} size={20} color={favorite ? '#D89222' : '#224D78'} />
+            <Ionicons name={isFavoriteId ? 'heart' : 'heart-outline'} size={20} color={isFavoriteId ? '#BF6842' : '#1D5F4A'} />
           </Pressable>
         </View>
 
         <View style={styles.feedbackRow}>
           <View style={styles.ratingCard}>
             <View style={styles.feedbackHeader}>
-              <Ionicons name="star-outline" size={18} color="#8B6421" />
+              <Ionicons name="star-outline" size={18} color="#8A5A37" />
               <Text style={styles.feedbackTitle}>Valorar servicio</Text>
             </View>
             <View style={styles.recommendStars}>
@@ -141,41 +207,28 @@ export default function ProviderProfile() {
                 return (
                   <Pressable
                     key={value}
-                    onPress={() => setRecommendationRating(value)}
+                    onPress={() => setWarRating(value)}
                     hitSlop={8}
                   >
                     <Ionicons
-                      name={value <= recommendationRating ? 'star' : 'star-outline'}
+                      name={value <= warRating ? 'star' : 'star-outline'}
                       size={18}
-                      color="#D89222"
+                      color="#BF6842"
                     />
                   </Pressable>
                 );
               })}
             </View>
-            <Pressable onPress={submitRating} style={styles.ratingButton}>
-              <Text style={styles.ratingButtonText}>Enviar valoración</Text>
+            <Pressable
+              onPress={submitRating}
+              disabled={isSubmittingRating}
+              style={styles.ratingButton}
+            >
+              <Text style={styles.ratingButtonText}>
+                {isSubmittingRating ? 'Enviando…' : 'Enviar valoración'}
+              </Text>
             </Pressable>
           </View>
-
-          <Pressable
-            onPress={recommendProvider}
-            style={[styles.likeCard, recommended && styles.likeCardActive]}
-          >
-            <View style={[styles.likeIcon, recommended && styles.likeIconActive]}>
-              <Ionicons
-                name={recommended ? 'thumbs-up' : 'thumbs-up-outline'}
-                size={21}
-                color={recommended ? '#FFFFFF' : '#224D78'}
-              />
-            </View>
-            <Text style={[styles.likeTitle, recommended && styles.likeTitleActive]}>
-              {recommended ? 'Recomendado' : 'Recomendar'}
-            </Text>
-            <Text style={[styles.likeDescription, recommended && styles.likeDescriptionActive]}>
-              {recommended ? 'Gracias por tu apoyo.' : 'Apoyar para Destacados.'}
-            </Text>
-          </Pressable>
         </View>
 
         <Section title="Acerca del servicio">
@@ -186,7 +239,7 @@ export default function ProviderProfile() {
           <View style={styles.chips}>
             {provider.coverage.map((item) => (
               <View key={item} style={styles.chip}>
-                <Ionicons name="location-outline" size={14} color="#224D78" />
+                <Ionicons name="location-outline" size={14} color="#1D5F4A" />
                 <Text style={styles.chipText}>{item}</Text>
               </View>
             ))}
@@ -233,56 +286,54 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F7F8F4' },
+  safe: { flex: 1, backgroundColor: '#F3ECDD' },
   content: { width: '100%', maxWidth: 720, alignSelf: 'center', padding: 16, paddingBottom: 40 },
   bar: { height: 64, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  iconBtn: { width: 43, height: 43, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E1E6EB' },
-  barTitle: { fontSize: 16, fontWeight: '700', color: '#1F446A' },
-  cover: { height: 238, borderRadius: 24, overflow: 'hidden', backgroundColor: '#DDE5EC' },
+  iconBtn: { width: 43, height: 43, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
+  barTitle: { fontSize: 16, fontWeight: '700', color: '#2F7353' },
+  cover: { height: 238, borderRadius: 24, overflow: 'hidden', backgroundColor: '#DED8CB' },
   gallery: { flex: 1 },
   coverImage: { height: 238 },
   coverShade: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(24,54,83,0.38)' },
+  coverPlaceholder: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
   coverCopy: { position: 'absolute', left: 18, right: 18, bottom: 18 },
   name: { color: '#FFFFFF', fontSize: 25, lineHeight: 30, fontWeight: '800' },
   serviceRow: { marginTop: 5, flexDirection: 'row', alignItems: 'center', gap: 6 },
   service: { color: '#EEF5FA', fontSize: 13, fontWeight: '700' },
   rating: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 11 },
   ratingText: { color: '#FFFFFF', fontWeight: '800' },
-  light: { color: '#EAF1F7', fontSize: 11 },
+  light: { color: '#E6EFE6', fontSize: 11 },
   galleryBadge: { position: 'absolute', top: 12, right: 12, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 12, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#FFFFFF' },
-  galleryBadgeText: { color: '#224D78', fontSize: 11, fontWeight: '800' },
+  galleryBadgeText: { color: '#1D5F4A', fontSize: 11, fontWeight: '800' },
   thumbnails: { gap: 8, paddingTop: 10 },
-  thumbnail: { width: 54, height: 45, borderRadius: 12, backgroundColor: '#DDE5EC' },
+  thumbnail: { width: 54, height: 45, borderRadius: 12, backgroundColor: '#DED8CB' },
   actions: { flexDirection: 'row', gap: 10, marginTop: 12 },
-  outline: { flex: 1, height: 52, borderRadius: 16, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DDE5EC' },
-  outlineText: { color: '#224D78', fontWeight: '800' },
-  primary: { flex: 1, height: 52, borderRadius: 16, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: '#224D78' },
+  outline: { flex: 1, height: 52, borderRadius: 16, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
+  outlineText: { color: '#1D5F4A', fontWeight: '800' },
+  primary: { flex: 1, height: 52, borderRadius: 16, flexDirection: 'row', gap: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1D5F4A' },
   primaryText: { color: '#FFFFFF', fontWeight: '800' },
-  favoriteButton: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DDE5EC' },
-  feedbackRow: { marginTop: 12, flexDirection: 'row', gap: 10, alignItems: 'stretch' },
-  ratingCard: { flex: 1.35, minHeight: 122, padding: 13, borderRadius: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E1E6EB' },
+  favoriteButton: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
+  feedbackRow: { marginTop: 12 },
+  ratingCard: { minHeight: 122, padding: 13, borderRadius: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
   feedbackHeader: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  feedbackTitle: { color: '#1F446A', fontSize: 14, lineHeight: 18, fontWeight: '700' },
+  feedbackTitle: { color: '#2F7353', fontSize: 14, lineHeight: 18, fontWeight: '700' },
   recommendStars: { marginTop: 12, flexDirection: 'row', alignItems: 'center', gap: 3 },
-  ratingButton: { minHeight: 34, marginTop: 13, paddingHorizontal: 10, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EAF1F7' },
-  ratingButtonText: { color: '#224D78', fontSize: 11, lineHeight: 14, fontWeight: '700' },
-  likeCard: { flex: 1, minHeight: 112, padding: 12, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E1E6EB' },
-  likeCardActive: { backgroundColor: '#EAF1F7', borderColor: '#B8CADB' },
-  likeIcon: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: '#EAF1F7' },
-  likeIconActive: { backgroundColor: '#224D78' },
-  likeTitle: { marginTop: 8, color: '#1F446A', fontSize: 12, fontWeight: '700', textAlign: 'center' },
-  likeTitleActive: { color: '#224D78' },
-  likeDescription: { marginTop: 3, color: '#687786', fontSize: 10, lineHeight: 13, textAlign: 'center' },
-  likeDescriptionActive: { color: '#536678' },
-  section: { marginTop: 13, padding: 18, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E1E6EB' },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: '#243F59', marginBottom: 10 },
-  body: { fontSize: 13, lineHeight: 20, color: '#687786' },
+  ratingButton: { minHeight: 34, marginTop: 13, paddingHorizontal: 10, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: '#E6EFE6' },
+  ratingButtonText: { color: '#1D5F4A', fontSize: 11, lineHeight: 14, fontWeight: '700' },
+  section: { marginTop: 13, padding: 18, borderRadius: 20, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: '#34443D', marginBottom: 10 },
+  body: { fontSize: 13, lineHeight: 20, color: '#7A827A' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 11, flexDirection: 'row', gap: 5, backgroundColor: '#E8EEF4' },
-  chipText: { fontSize: 11, fontWeight: '700', color: '#224D78' },
+  chip: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 11, flexDirection: 'row', gap: 5, backgroundColor: '#E2ECE1' },
+  chipText: { fontSize: 11, fontWeight: '700', color: '#1D5F4A' },
   available: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#2C689A' },
-  availableText: { fontSize: 12, fontWeight: '700', color: '#285B87' },
-  request: { height: 58, marginTop: 14, borderRadius: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, backgroundColor: '#D89222' },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#2F7353' },
+  availableText: { fontSize: 12, fontWeight: '700', color: '#2F7353' },
+  request: { height: 58, marginTop: 14, borderRadius: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, backgroundColor: '#BF6842' },
   requestText: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
+  notFound: { marginTop: 40, padding: 26, borderRadius: 24, alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#DED8CB' },
+  notFoundTitle: { marginTop: 13, color: '#34443D', fontSize: 17, fontWeight: '800' },
+  notFoundText: { marginTop: 6, color: '#7A827A', fontSize: 13, lineHeight: 19, textAlign: 'center' },
+  notFoundButton: { minHeight: 46, marginTop: 16, paddingHorizontal: 16, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1D5F4A' },
+  notFoundButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
 });

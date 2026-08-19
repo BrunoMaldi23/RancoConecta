@@ -12,132 +12,15 @@ import {
   View,
 } from "react-native";
 
+import { useAppData, type AppCategory } from "../contexts/app-data";
+import { safeGoBack } from "../lib/navigation";
+
 type IconName = ComponentProps<typeof Ionicons>["name"];
 type LocationId = "lago-ranco" | "futrono" | "llifen" | "riñinahue";
 
-type Category = {
-  id: string;
-  name: string;
-  shortName: string;
-  description: string;
-  icon: IconName;
-  color: string;
-  background: string;
-  locations: Partial<Record<LocationId, number>>;
+type CategoryRow = AppCategory & {
+  count: number;
 };
-
-const CATEGORIES: Category[] = [
-  {
-    id: "hogar",
-    name: "Hogar y reparaciones",
-    shortName: "Hogar",
-    description: "Gasfiteria, electricidad, carpinteria y pintura.",
-    icon: "hammer-outline",
-    color: "#8B6421",
-    background: "#F8ECD5",
-    locations: { "lago-ranco": 12, futrono: 16, llifen: 5, riñinahue: 4 },
-  },
-  {
-    id: "calefaccion",
-    name: "Calefaccion",
-    shortName: "Calefaccion",
-    description: "Estufas, pellet, lena y mantenciones.",
-    icon: "flame-outline",
-    color: "#B94738",
-    background: "#F9E4E0",
-    locations: { "lago-ranco": 8, futrono: 11, llifen: 4, riñinahue: 3 },
-  },
-  {
-    id: "campo",
-    name: "Jardin y parcela",
-    shortName: "Jardin y parcela",
-    description: "Poda, terrenos, cercos, riego y maquinaria.",
-    icon: "leaf-outline",
-    color: "#287A51",
-    background: "#E2F2E8",
-    locations: { "lago-ranco": 14, futrono: 13, llifen: 7, riñinahue: 8 },
-  },
-  {
-    id: "fletes",
-    name: "Fletes y carga",
-    shortName: "Fletes",
-    description: "Mudanzas, carga, escombros y limpieza de fosas.",
-    icon: "car-outline",
-    color: "#224D78",
-    background: "#E8EEF4",
-    locations: { "lago-ranco": 7, futrono: 10, llifen: 3, riñinahue: 4 },
-  },
-  {
-    id: "gastronomia",
-    name: "Comida y gastronomia",
-    shortName: "Gastronomia",
-    description: "Comida casera, reparto, reposteria y catering.",
-    icon: "restaurant-outline",
-    color: "#A46B22",
-    background: "#F8ECD5",
-    locations: { "lago-ranco": 18, futrono: 22, llifen: 6, riñinahue: 5 },
-  },
-  {
-    id: "vehiculos",
-    name: "Vehiculos y asistencia",
-    shortName: "Vehiculos",
-    description: "Mecanica, vulcanizacion, gruas y baterias.",
-    icon: "construct-outline",
-    color: "#647584",
-    background: "#EEF3F7",
-    locations: { "lago-ranco": 9, futrono: 14, llifen: 4, riñinahue: 3 },
-  },
-  {
-    id: "agua",
-    name: "Agua y sistemas hidricos",
-    shortName: "Agua",
-    description: "Pozos, bombas, estanques, filtros y purificacion.",
-    icon: "water-outline",
-    color: "#26718A",
-    background: "#DFF1F5",
-    locations: { "lago-ranco": 6, futrono: 8, llifen: 3, riñinahue: 5 },
-  },
-  {
-    id: "energia",
-    name: "Energia y conectividad",
-    shortName: "Energia",
-    description: "Paneles solares, generadores, internet y alarmas.",
-    icon: "flash-outline",
-    color: "#8B6421",
-    background: "#F8ECD5",
-    locations: { "lago-ranco": 5, futrono: 7, llifen: 2, riñinahue: 2 },
-  },
-  {
-    id: "aseo",
-    name: "Aseo y propiedades",
-    shortName: "Aseo",
-    description: "Aseo domestico y cuidado de viviendas.",
-    icon: "sparkles-outline",
-    color: "#6C5590",
-    background: "#EEE8F7",
-    locations: { "lago-ranco": 11, futrono: 15, llifen: 4 },
-  },
-  {
-    id: "cuidados",
-    name: "Salud y cuidados",
-    shortName: "Cuidados",
-    description: "Enfermeria, belleza, personas y mascotas.",
-    icon: "heart-outline",
-    color: "#A74E6C",
-    background: "#F8E4EB",
-    locations: { "lago-ranco": 10, futrono: 17, llifen: 3, riñinahue: 2 },
-  },
-  {
-    id: "profesionales",
-    name: "Servicios profesionales",
-    shortName: "Profesionales",
-    description: "Topografia, tramites, tecnologia y fotografia.",
-    icon: "briefcase-outline",
-    color: "#224D78",
-    background: "#E8EEF4",
-    locations: { "lago-ranco": 8, futrono: 12, llifen: 2, riñinahue: 2 },
-  },
-];
 
 const isLocationId = (value?: string): value is LocationId =>
   value === "lago-ranco" ||
@@ -160,20 +43,30 @@ export default function CategoriesScreen() {
     ? rawLocationId
     : "lago-ranco";
   const locationName = rawLocationName || "Lago Ranco";
+  const { providers, categories: catalogCategories, categoriesStatus } = useAppData();
   const [search, setSearch] = useState("");
 
   const categories = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return CATEGORIES.filter((category) => {
-      const count = category.locations[locationId] ?? 0;
+    const enriched: CategoryRow[] = catalogCategories.map((category) => {
+      const count = providers.filter(
+        (provider) =>
+          provider.publicationStatus === "Publicado" &&
+          provider.categoryId === category.id &&
+          provider.coverage.includes(locationName),
+      ).length;
+
+      return { ...category, count };
+    });
+
+    return enriched.filter((category) => {
       const matches =
         !term ||
         category.name.toLowerCase().includes(term) ||
-        category.shortName.toLowerCase().includes(term) ||
         category.description.toLowerCase().includes(term);
-      return count > 0 && matches;
+      return category.count > 0 && matches;
     });
-  }, [locationId, search]);
+  }, [catalogCategories, locationName, providers, search]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -186,13 +79,13 @@ export default function CategoriesScreen() {
           <>
             <View style={styles.topbar}>
               <Pressable
-                onPress={() => router.back()}
+                onPress={() => safeGoBack("/home")}
                 style={({ pressed }) => [
                   styles.topbarButton,
                   pressed && styles.pressed,
                 ]}
               >
-                <Ionicons name="arrow-back" size={23} color="#1F446A" />
+                <Ionicons name="arrow-back" size={23} color="#2F7353" />
               </Pressable>
               <View style={styles.topbarTitleWrap}>
                 <Text style={styles.topbarTitle}>Categorias</Text>
@@ -205,7 +98,7 @@ export default function CategoriesScreen() {
                   pressed && styles.pressed,
                 ]}
               >
-                <Ionicons name="home-outline" size={21} color="#224D78" />
+                <Ionicons name="home-outline" size={21} color="#1D5F4A" />
               </Pressable>
             </View>
 
@@ -214,24 +107,24 @@ export default function CategoriesScreen() {
             </View>
 
             <View style={styles.searchBox}>
-              <Ionicons name="search-outline" size={20} color="#687786" />
+              <Ionicons name="search-outline" size={20} color="#7A827A" />
               <TextInput
                 value={search}
                 onChangeText={setSearch}
                 placeholder="Buscar rubro: hogar, agua, energia..."
-                placeholderTextColor="#87929E"
+                placeholderTextColor="#8A9288"
                 style={styles.searchInput}
               />
               {!!search && (
                 <Pressable onPress={() => setSearch("")}>
-                  <Ionicons name="close-circle" size={20} color="#87929E" />
+                  <Ionicons name="close-circle" size={20} color="#8A9288" />
                 </Pressable>
               )}
             </View>
           </>
         }
         renderItem={({ item }) => {
-          const count = item.locations[locationId] ?? 0;
+          const count = item.count;
 
           return (
             <Pressable
@@ -250,11 +143,11 @@ export default function CategoriesScreen() {
                 pressed && styles.rowPressed,
               ]}
             >
-              <View style={[styles.iconBox, { backgroundColor: item.background }]}>
-                <Ionicons name={item.icon} size={23} color={item.color} />
+              <View style={[styles.iconBox, { backgroundColor: item.iconBackground }]}>
+                <Ionicons name={item.icon as IconName} size={23} color={item.iconColor} />
               </View>
               <View style={styles.categoryCopy}>
-                <Text style={styles.categoryName}>{item.shortName}</Text>
+                <Text style={styles.categoryName}>{item.name}</Text>
                 <Text numberOfLines={1} style={styles.categoryDescription}>
                   {item.description}
                 </Text>
@@ -262,16 +155,27 @@ export default function CategoriesScreen() {
               <View style={styles.countBadge}>
                 <Text style={styles.countText}>{count}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color="#99A4AF" />
+              <Ionicons name="chevron-forward" size={18} color="#9B9A90" />
             </Pressable>
           );
         }}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Ionicons name="search-outline" size={38} color="#99A4AF" />
-            <Text style={styles.emptyTitle}>Sin categorias</Text>
-            <Text style={styles.emptyText}>Prueba con otra palabra.</Text>
-          </View>
+          categoriesStatus === "loading" ? (
+            <View style={styles.empty}>
+              <Text style={styles.emptyText}>Cargando categorías…</Text>
+            </View>
+          ) : catalogCategories.length === 0 ? (
+            <View style={styles.empty}>
+              <Ionicons name="grid-outline" size={38} color="#9B9A90" />
+              <Text style={styles.emptyTitle}>Aún no hay categorías</Text>
+            </View>
+          ) : (
+            <View style={styles.empty}>
+              <Ionicons name="search-outline" size={38} color="#9B9A90" />
+              <Text style={styles.emptyTitle}>Sin resultados</Text>
+              <Text style={styles.emptyText}>Prueba con otra palabra.</Text>
+            </View>
+          )
         }
       />
     </SafeAreaView>
@@ -279,7 +183,7 @@ export default function CategoriesScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#F7F8F4" },
+  safeArea: { flex: 1, backgroundColor: "#F3ECDD" },
   content: {
     width: "100%",
     maxWidth: 720,
@@ -300,17 +204,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E1E6EB",
+    borderColor: "#DED8CB",
   },
   topbarTitleWrap: { flex: 1, marginHorizontal: 12, alignItems: "center" },
   topbarTitle: {
-    color: "#1F446A",
+    color: "#2F7353",
     fontSize: 17,
     fontWeight: "800",
   },
   topbarSubtitle: {
     marginTop: 2,
-    color: "#687786",
+    color: "#7A827A",
     fontSize: 11,
     fontWeight: "700",
   },
@@ -320,7 +224,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   sectionTitle: {
-    color: "#1F446A",
+    color: "#2F7353",
     fontSize: 22,
     lineHeight: 28,
     fontWeight: "800",
@@ -335,7 +239,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#DDE5EC",
+    borderColor: "#DED8CB",
   },
   searchInput: {
     flex: 1,
@@ -353,7 +257,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E1E6EB",
+    borderColor: "#DED8CB",
   },
   rowPressed: { opacity: 0.82, transform: [{ scale: 0.99 }] },
   iconBox: {
@@ -365,7 +269,7 @@ const styles = StyleSheet.create({
   },
   categoryCopy: { flex: 1, minWidth: 0, marginLeft: 12 },
   categoryName: {
-    color: "#243F59",
+    color: "#34443D",
     fontSize: 15,
     fontWeight: "900",
   },
@@ -383,10 +287,10 @@ const styles = StyleSheet.create({
     borderRadius: 11,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#EAF1F7",
+    backgroundColor: "#E6EFE6",
   },
   countText: {
-    color: "#224D78",
+    color: "#1D5F4A",
     fontSize: 12,
     fontWeight: "900",
   },
@@ -396,7 +300,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     marginTop: 13,
-    color: "#33485D",
+    color: "#34443D",
     fontSize: 16,
     fontWeight: "800",
   },

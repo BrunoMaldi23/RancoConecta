@@ -1,6 +1,6 @@
 import { FirebaseError } from 'firebase/app';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, onSnapshot, query, setDoc, updateDoc } from 'firebase/firestore';
 
 import type { AuthUser, ManagedUser } from '../contexts/auth';
 import { firebaseAuth, firestore, isFirebaseConfigured } from '../lib/firebase';
@@ -16,6 +16,67 @@ const requireFirebase = () => {
   return { auth: firebaseAuth, db: firestore };
 };
 
+export function observeUsers(
+  onNext: (users: ManagedUser[]) => void,
+  onError: (error: Error) => void,
+) {
+  const { db } = requireFirebase();
+
+  return onSnapshot(
+    query(collection(db, 'users')),
+    (snapshot) => {
+      onNext(snapshot.docs.map((item) => item.data() as ManagedUser));
+    },
+    (error) => onError(error as Error),
+  );
+}
+
+export function observeUserDoc(
+  userId: string,
+  onNext: (user: ManagedUser | null) => void,
+  onError: (error: Error) => void,
+) {
+  const { db } = requireFirebase();
+
+  return onSnapshot(
+    doc(db, 'users', userId),
+    (snapshot) => {
+      onNext(snapshot.exists() ? (snapshot.data() as ManagedUser) : null);
+    },
+    (error) => onError(error as Error),
+  );
+}
+
+export function mapUserDocument(id: string, data: UserDocument): ManagedUser {
+  const displayName =
+    data.role === 'municipal_admin' && data.name.toLowerCase().includes('municipal')
+      ? 'Administrador interno'
+      : data.name;
+
+  return {
+    id,
+    name: displayName,
+    email: data.email,
+    role: data.role,
+    status: data.status,
+    businessName: data.businessName,
+    serviceName: data.serviceName,
+    phone: data.phone,
+    favoriteIds: data.favoriteIds,
+  };
+}
+
+export async function fetchUserById(userId: string) {
+  const { db } = requireFirebase();
+  const snapshot = await getDoc(doc(db, 'users', userId));
+
+  if (!snapshot.exists()) {
+    return null;
+  }
+
+  return mapUserDocument(snapshot.id, snapshot.data() as UserDocument);
+}
+
 export async function signInUser(email: string, password: string) {
   const { auth, db } = requireFirebase();
   let credential;
@@ -24,12 +85,8 @@ export async function signInUser(email: string, password: string) {
     credential = await signInWithEmailAndPassword(auth, email, password);
   } catch (error) {
     if (error instanceof FirebaseError) {
-      if (
-        error.code === 'auth/invalid-credential' ||
-        error.code === 'auth/user-not-found' ||
-        error.code === 'auth/wrong-password'
-      ) {
-        throw new Error('Correo o contraseña incorrectos en Firebase Auth.');
+      if (error.code === 'auth/invalid-credential') {
+        throw new Error('Correo o contraseña incorrectos.');
       }
 
       if (error.code === 'auth/operation-not-allowed') {
@@ -48,14 +105,7 @@ export async function signInUser(email: string, password: string) {
     throw new Error('No existe perfil de usuario asociado.');
   }
 
-  const data = profile.data() as UserDocument;
-
-  return {
-    id: credential.user.uid,
-    name: data.name,
-    email: data.email,
-    role: data.role,
-  } satisfies AuthUser;
+  return mapUserDocument(credential.user.uid, profile.data() as UserDocument) satisfies AuthUser;
 }
 
 export async function createCommerceAccount(payload: {
@@ -68,33 +118,33 @@ export async function createCommerceAccount(payload: {
 }) {
   const { auth, db } = requireFirebase();
   const credential = await createUserWithEmailAndPassword(auth, payload.email, payload.password);
-  const user: ManagedUser = {
-    id: credential.user.uid,
+
+  const document: UserDocument = {
     name: payload.name,
     email: payload.email,
-    password: payload.password,
     role: 'commerce',
     status: 'PENDING_MUNICIPAL_APPROVAL',
     businessName: payload.businessName,
     serviceName: payload.serviceName,
     phone: payload.phone,
-  };
-
-  const document: UserDocument = {
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    status: user.status,
-    businessName: user.businessName,
-    serviceName: user.serviceName,
-    phone: user.phone,
     createdAt: now(),
     updatedAt: now(),
   };
 
   await setDoc(doc(db, 'users', credential.user.uid), document);
 
-  return user;
+  return mapUserDocument(credential.user.uid, document);
+}
+
+export async function updateUserById(
+  userId: string,
+  payload: Partial<Pick<UserDocument, 'businessName' | 'serviceName' | 'phone' | 'favoriteIds'>>,
+) {
+  const { db } = requireFirebase();
+  await updateDoc(doc(db, 'users', userId), {
+    ...payload,
+    updatedAt: now(),
+  });
 }
 
 export async function signOutUser() {
